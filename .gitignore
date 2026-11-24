@@ -1,0 +1,27 @@
+# Sett Designer: the studio and what it uses. Everything else in this folder stays out
+# (only what's listed below with ! goes in).
+/*
+!/.gitignore
+!/README.md
+!/studio/
+!/framer/
+# the 3D model and the car the studio builds its scenes from
+!/sett-v9.obj
+!/sett-v9.mtl
+!/tesla-y2.stl
+
+# archives and originals (the studio uses the processed files)
+/framer/*.zip
+/framer/_glb_orig/
+/framer/sett-framer/
+/framer/assets/photo/_orig/
+
+# output the studio makes (screenshots, slides)
+/studio/screenshots/*.png
+/studio/screenshots/index.json
+/studio/screenshots/thumbs/
+/studio/screenshots/tiles/
+/studio/slides/
+
+.DS_Store
+node_modules/

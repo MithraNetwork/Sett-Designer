@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sett studio — pages</title>
+<style>
+  html,body{ margin:0; background:#000; }
+  /* a stand-in for the site's floating nav, so the hero spacing reads right */
+  .nav{ position:fixed; top:22px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:26px; padding:14px 26px; border-radius:999px;
+    background:rgba(210,210,210,.55); backdrop-filter:blur(12px); font:500 16px Outfit, system-ui; color:#000; }
+  .bar{ position:fixed; right:16px; bottom:16px; z-index:30; display:flex; gap:6px; padding:6px; border-radius:999px;
+    background:rgba(8,11,28,0.8); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.12); }
+  .bar button{ font:600 13px Outfit, system-ui; color:#dfe4f2; background:none; border:0; padding:8px 14px; border-radius:999px; cursor:pointer; }
+  .bar button.on{ background:#fff; color:#0D1130; }
+  /* ?static: no scroll reveal, every image at once (for screenshots) */
+  .static .sx-js .rv{ opacity:1 !important; transform:none !important; transition:none !important; }
+</style>
+<script>
+if (/[?&]headless\b/.test(location.search)) {
+  Object.defineProperty(document, "hidden", { get: () => false })
+  window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 16)
+  window.cancelAnimationFrame = (id) => clearTimeout(id)
+}
+</script>
+</head>
+<body>
+<div class="nav"><span>Home</span><span>Wat is Sett?</span><span>Bedrijven</span><span>Particulieren</span><span>Over ons</span></div>
+<div id="page"></div>
+<nav class="bar">
+  <button data-p="details">Details</button>
+  <button data-p="particulieren">Particulieren</button>
+  <button data-p="bedrijven">Bedrijven</button>
+  <button id="empty">Lege slots</button>
+</nav>
+<script type="module">
+import React from "https://esm.sh/react@18.3.1"
+import { createRoot } from "https://esm.sh/react-dom@18.3.1/client"
+import Details from "./lib/SettPageDetails.js"
+import Particulieren from "./lib/SettPageParticulieren.js"
+import Bedrijven from "./lib/SettPageBedrijven.js"
+
+// the image each slot gets once it's filled in Framer
+const A = (f) => ({ src: "/framer/assets/" + f + ".png" })
+const PAGES = {
+  details: [Details, {
+    boxModel: "/framer/sett-box.glb",
+    imgPieken: A("twee-pieken"), imgOverdag: A("probleem-overdag"), imgAvond: A("probleem-avond"), img2027: A("probleem-2027"),
+    imgBatterijkast: A("keuze-batterijkast"), imgOndergronds: A("keuze-ondergronds"),
+    img96: A("cijfer-96kwh"), img22: A("cijfer-22kw"), img50: A("cijfer-50kw"), img0: A("cijfer-0m2"),
+    imgParticulier: A("doelgroep-particulier"), imgOndernemer: A("doelgroep-ondernemer"), imgOverheid: A("doelgroep-overheid"), imgWerkgever: A("doelgroep-werkgever"),
+    img2026: A("tijdlijn-2026"), imgT2027: A("tijdlijn-2027"), img2030: A("tijdlijn-2030"), imgHub: A("onzichtbare-energiehub"),
+  }],
+  particulieren: [Particulieren, {
+    heroModel: "/framer/sett-hero-particulieren.glb",
+    imgSalderen: A("salderen-stopt"), imgOnafhankelijk: A("onafhankelijk"), imgGrip: A("grip-op-rekening"), imgInstallatie: A("installatie"),
+    imgArbitrage: A("voordeel-arbitrage"), imgDelen: A("voordeel-delen"),
+  }],
+  bedrijven: [Bedrijven, {
+    heroModel: "/framer/sett-hero-bedrijven.glb",
+    imgWachtlijst: A("wachtlijst"), imgBuffer: A("bedrijven-hero"), imgVermogen: A("voordeel-vermogen"), imgNetuitval: A("voordeel-netuitval"),
+    imgPeak: A("voordeel-peakshaving"), imgArbitrage: A("voordeel-arbitrage"), imgDelen: A("voordeel-delen"),
+  }],
+}
+if (/[?&]static\b/.test(location.search)) {
+  document.documentElement.classList.add("static")
+  new MutationObserver(() => document.querySelectorAll("img[loading=lazy]").forEach((i) => (i.loading = "eager"))).observe(document.body, { childList: true, subtree: true })
+}
+// ?w=390: the page at a phone's width (its layout follows its own width)
+const w = new URLSearchParams(location.search).get("w")
+if (w) Object.assign(document.getElementById("page").style, { width: w + "px", margin: "0 auto", outline: "1px solid #333" })
+const root = createRoot(document.getElementById("page"))
+let empty = false
+function show(name) {
+  const [C, props] = PAGES[name]
+  const p = empty ? Object.fromEntries(Object.entries(props).filter(([k]) => !k.startsWith("img"))) : props
+  root.render(React.createElement(C, { key: name + empty, ...p }))
+  document.querySelectorAll(".bar button[data-p]").forEach((b) => b.classList.toggle("on", b.dataset.p === name))
+  history.replaceState(null, "", "#" + name)
+  window.scrollTo(0, 0)
+}
+let current = (location.hash || "#details").slice(1)
+if (!PAGES[current]) current = "details"
+document.querySelectorAll(".bar button[data-p]").forEach((b) => b.addEventListener("click", () => show((current = b.dataset.p))))
+document.getElementById("empty").addEventListener("click", (e) => {
+  empty = !empty
+  e.currentTarget.classList.toggle("on", empty)
+  show(current)
+})
+show(current)
+</script>
+</body>
+</html>

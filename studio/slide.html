@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sett studio · slides</title>
+<!-- The slide studio: any Sett 3D scene (the page heroes, the slide scenes, the site's
+     dioramas) in the heroes' look, with floating labels, saved as a PNG at twice the size.
+     Scenes on the left; the view, the labels and the export on the right. Everything you set
+     is kept per scene in this browser. Not part of the site. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Geist+Mono:wght@500;600&display=block" rel="stylesheet">
+<style>
+  :root{ color-scheme:dark; --bg:#0c0e13; --panel:#12151c; --line:#232836; --ink:#dfe4f2; --muted:#8a93a8; --lime:#8DFF66; }
+  *{ box-sizing:border-box; }
+  html, body{ margin:0; height:100%; background:var(--bg); font:500 13px/1.4 Outfit, system-ui, sans-serif; color:var(--ink); overflow:hidden; }
+  .app{ display:grid; grid-template-columns:230px 1fr 320px; height:100vh; }
+  aside{ background:var(--panel); border-right:1px solid var(--line); overflow:auto; padding:16px 12px 24px; }
+  aside.right{ border-right:0; border-left:1px solid var(--line); padding:16px 16px 24px; }
+  .brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; margin:2px 4px 18px; }
+  .brand i{ width:8px; height:8px; border-radius:50%; background:var(--lime); }
+  h3{ margin:18px 4px 8px; font:600 10.5px "Geist Mono", ui-monospace, monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  h3:first-of-type{ margin-top:0; }
+  .scenes button{ display:block; width:100%; text-align:left; font:inherit; color:var(--ink); background:none; border:0; border-radius:8px; padding:7px 10px; cursor:pointer; }
+  .scenes button:hover{ background:#1a1e28; }
+  .scenes button.on{ background:#1f2533; box-shadow:inset 2px 0 0 var(--lime); }
+  .center{ position:relative; overflow:hidden; display:grid; place-items:center; background:radial-gradient(60% 60% at 50% 40%, #171b24, #0c0e13); }
+  .stage{ position:absolute; left:50%; top:calc(50% - 14px); transform-origin:center; box-shadow:0 20px 80px rgba(0,0,0,.55); }
+  .scene, .pills{ position:absolute; inset:0; }
+  .scene{ cursor:grab; touch-action:none; }
+  .scene.panning{ cursor:grabbing; }
+  .pills{ pointer-events:none; }
+  .hint{ position:absolute; left:16px; bottom:12px; color:var(--muted); font-size:12px; }
+  /* the controls */
+  .row{ display:flex; align-items:center; gap:10px; margin:8px 4px; }
+  .row label{ width:62px; color:var(--muted); flex:none; }
+  .row input[type=range]{ flex:1; accent-color:var(--lime); }
+  .row output{ width:34px; text-align:right; color:var(--muted); font:500 11px "Geist Mono", monospace; }
+  select, input[type=text], button.b{ font:inherit; color:var(--ink); background:#1a1e28; border:1px solid var(--line); border-radius:8px; padding:7px 10px; }
+  select, input[type=text]{ flex:1; min-width:0; }
+  button.b{ cursor:pointer; }
+  button.b:hover{ border-color:#384057; }
+  button.b.main{ width:100%; margin-top:6px; background:var(--lime); color:#060C1A; border-color:var(--lime); font-weight:700; padding:11px; }
+  button.b.main:disabled{ opacity:.45; cursor:default; }
+  .btns{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 4px; }
+  .check{ display:flex; align-items:center; gap:8px; margin:8px 4px; color:var(--muted); }
+  .status{ margin:8px 4px 0; color:var(--lime); min-height:18px; font-size:12px; }
+  .list{ margin:6px 4px; display:grid; gap:4px; }
+  .list button{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; font:inherit; color:var(--ink); background:#171b24; border:1px solid transparent; border-radius:8px; padding:6px 8px; cursor:pointer; }
+  .list button.on{ border-color:#3a4256; background:#1d2230; }
+  .list i{ width:12px; height:12px; border-radius:50%; flex:none; }
+  .empty{ color:var(--muted); margin:6px 4px; font-size:12px; }
+  .editor{ margin:10px 4px 0; padding:12px; border:1px solid var(--line); border-radius:12px; background:#151922; }
+  .swatches, .icons{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  .swatches button{ width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
+  .swatches button.on{ border-color:#fff; }
+  .icons button{ width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:#1a1e28; display:grid; place-items:center; cursor:pointer; }
+  .icons button.on{ border-color:var(--lime); background:#212838; }
+  .icons svg{ width:20px; height:20px; }
+  /* a floating label: a pill with an icon and a text, a stem down to a dot. Its position is the dot's */
+  .pill{ position:absolute; transform:translate(-50%, -100%); display:flex; flex-direction:column; align-items:center; pointer-events:auto; cursor:grab; user-select:none; }
+  .pill.drag{ cursor:grabbing; }
+  .pill .body{ display:flex; align-items:center; gap:14px; height:68px; padding:0 30px 0 11px; border-radius:999px; background:rgba(6,12,26,.82); box-shadow:inset 0 0 0 1.5px rgba(223,228,244,.18), 0 14px 40px rgba(0,0,0,.35); }
+  .pill.sel .body{ box-shadow:inset 0 0 0 1.5px rgba(223,228,244,.18), 0 0 0 3px rgba(255,255,255,.55), 0 14px 40px rgba(0,0,0,.35); }
+  .pill .ic{ width:46px; height:46px; border-radius:50%; background:rgb(var(--c)); display:grid; place-items:center; flex:none; }
+  .pill .ic svg{ width:26px; height:26px; }
+  .pill .tx{ font:600 26px/1 Outfit, system-ui, sans-serif; letter-spacing:-.01em; color:#F4F6FB; white-space:nowrap; outline:none; }
+  .pill .stem{ width:2px; height:54px; background:linear-gradient(180deg, rgba(var(--c),.15), rgba(var(--c),.9)); }
+  .pill .dot{ width:14px; height:14px; border-radius:50%; background:rgb(var(--c)); box-shadow:0 0 0 5px rgba(var(--c),.25), 0 0 18px rgba(var(--c),.9); margin-top:-2px; }
+  .stage.nolabels .pills{ display:none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><i></i>Sett studio · slides</div>
+    <div class="scenes" id="scenes"></div>
+  </aside>
+  <main class="center" id="center">
+    <div class="stage" id="stage"><div class="scene" id="scene"></div><div class="pills" id="pills"></div></div>
+    <div class="hint">Sleep de scène om te verschuiven · sleep een label om het te verplaatsen · dubbelklik op een label om de tekst te wijzigen · Delete verwijdert het gekozen label</div>
+  </main>
+  <aside class="right">
+    <h3>Beeld</h3>
+    <div class="row"><label>Formaat</label>
+      <select id="format">
+        <option value="1920x1080">16:9 · 3840×2160</option>
+        <option value="1440x1080">4:3 · 2880×2160</option>
+        <option value="1080x1080">1:1 · 2160×2160</option>
+        <option value="1080x1350">4:5 · 2160×2700</option>
+      </select>
+    </div>
+    <div class="row"><label>Licht</label>
+      <select id="vibe">
+        <option value="blauwUur">Blauw uur</option>
+        <option value="goudenUur">Gouden uur</option>
+        <option value="paarseAvond">Paarse avond</option>
+        <option value="groeneNacht">Groene nacht</option>
+        <option value="zonnig">Zonnig</option>
+        <option value="ochtend">Ochtend</option>
+      </select>
+    </div>
+    <div class="row"><label>Zoom</label><input id="zoom" type="range" min="0.6" max="1.8" step="0.05"><output id="zoomV"></output></div>
+    <div class="row"><label>Draai</label><input id="turn" type="range" min="-40" max="40" step="1"><output id="turnV"></output></div>
+    <div class="row"><label>Hoogte</label><input id="tilt" type="range" min="-12" max="25" step="1"><output id="tiltV"></output></div>
+    <label class="check"><input id="motion" type="checkbox"> Beweging (camera en stroom)</label>
+    <div class="btns"><button class="b" id="resetView">Beeld herstellen</button><button class="b" id="rebuild" hidden>Scène opnieuw maken</button></div>
+
+    <h3>Labels</h3>
+    <label class="check"><input id="showLabels" type="checkbox" checked> Labels tonen</label>
+    <div class="btns"><button class="b" id="addLabel">+ Label</button></div>
+    <div class="list" id="labelList"></div>
+    <div class="editor" id="editor" hidden>
+      <div class="row" style="margin:0 0 6px"><input type="text" id="lText" placeholder="Tekst"></div>
+      <div class="swatches" id="lColors"></div>
+      <div class="icons" id="lIcons"></div>
+      <div class="btns" style="margin:8px 0 0"><button class="b" id="lDelete">Verwijderen</button></div>
+    </div>
+
+    <h3>Exporteren</h3>
+    <button class="b main" id="png" disabled>Download PNG</button>
+    <div class="status" id="status"></div>
+  </aside>
+</div>
+<script type="module">
+import React from "https://esm.sh/react@18.3.1"
+import { createRoot } from "https://esm.sh/react-dom@18.3.1/client"
+import SettHero3D from "./lib/SettHero3D.js"
+import { SCROLL } from "./scroll.js"
+
+const SCALE = 2 // the PNG at twice the stage's size
+const $ = (id) => document.getElementById(id)
+const stage = $("stage"), scene = $("scene"), layer = $("pills"), status = $("status")
+
+// ---------------------------------------------------------------- the scenes
+// the slide scenes and the page heroes (built for this look), then the site's dioramas
+const pretty = (s) => s.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase())
+const SCENES = [
+  { id: "datacenter", group: "Slides", name: "Kantoor + datacenter", model: "/framer/sett-slide-datacenter.glb", build: "slideDatacenter", file: "sett-slide-datacenter.glb",
+    view: { vibe: "blauwUur", zoom: 1.1, turn: -6, tilt: -6 },
+    labels: [
+      { icon: "ev", color: "lime", text: "EV charging", x: 1050 / 1920, y: 668 / 1080 },
+      { icon: "office", color: "sun", text: "Off-grid working", x: 1130 / 1920, y: 470 / 1080 },
+      { icon: "compute", color: "lilac", text: "Local AI", x: 1500 / 1920, y: 585 / 1080 },
+      { icon: "peak", color: "blue", text: "Peak shaving", x: 500 / 1920, y: 668 / 1080 },
+    ] },
+  { id: "particulieren", group: "Pagina-hero's", name: "Particulieren", model: "/framer/sett-hero-particulieren.glb", view: { vibe: "zonnig" } },
+  { id: "bedrijven", group: "Pagina-hero's", name: "Bedrijven", model: "/framer/sett-hero-bedrijven.glb", view: { vibe: "blauwUur" } },
+  { id: "gemeenten", group: "Pagina-hero's", name: "Gemeenten", model: "/framer/sett-hero-gemeenten.glb", view: { vibe: "goudenUur" } },
+  ...Object.keys(SCROLL).map((k) => ({ id: "scroll-" + k, group: "Dioramas", name: pretty(k), model: "/framer/sett-scroll-" + k + ".glb", view: { vibe: "blauwUur" } })),
+]
+const VIEW0 = { format: "1920x1080", vibe: "blauwUur", zoom: 1, turn: 0, tilt: 0, motion: false, panX: 0, panY: 0, showLabels: true }
+// the bedrijven and particulieren pages' own sky for their moods (SettV2Hero); the others bring theirs
+const SKY = { blauwUur: ["#060C1A", "#1F0748"], zonnig: ["#4A99F1", "#FCF0D7"] }
+
+// ---------------------------------------------------------------- labels: colours and icons
+const COLORS = { lime: "141,255,102", sun: "255,185,43", lilac: "192,168,240", blue: "79,163,255", purple: "154,108,233", cream: "252,240,215" }
+const ICON = {
+  ev: '<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0V7zM12 17v5"/>',
+  office: '<rect x="4" y="9" width="16" height="10" rx="1.5"/><path d="M2 21h20M12 2v1.5M7.8 3.8l1 1M16.2 3.8l-1 1M9.5 7a2.5 2.5 0 0 1 5 0"/>',
+  compute: '<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  peak: '<path d="M3 20h18"/><path d="M4 16l3.5-4 3 2.5 2.5-4.5h3l2 3.5 2-1.5"/><path d="M3 7.5h18" stroke-dasharray="2.5 2.5"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  wind: '<path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>',
+  battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M11.5 9l-2 3h3l-2 3"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  building: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/>',
+  grid: '<path d="M8 22L12 2l4 20M6 8h12M5 13h14M9 17l6-4M15 17l-6-4"/>',
+  car: '<path d="M3 13l2-5a2 2 0 0 1 2-1.3h10a2 2 0 0 1 2 1.3l2 5v5H3z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/>',
+  leaf: '<path d="M5 19c0-8 6-14 15-14 0 9-6 15-14 15"/><path d="M5 19c3-5 6-8 10-10"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+}
+const svg = (k, color, size = 48) => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (ICON[k] || ICON.bolt) + "</svg>"
+const iconImg = {}
+for (const k of Object.keys(ICON)) {
+  const im = new Image()
+  im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg(k, "#060C1A"))
+  iconImg[k] = im
+}
+
+// ---------------------------------------------------------------- state, per scene, in this browser
+const KEY = (id) => "sett-studio:" + id
+let cur = SCENES[0], st = null, sel = -1, version = Date.now()
+const load = (sc) => {
+  let saved = null
+  try { saved = JSON.parse(localStorage.getItem(KEY(sc.id)) || "null") } catch {}
+  return saved || { ...VIEW0, ...sc.view, labels: (sc.labels || []).map((l) => ({ ...l })) }
+}
+const persist = () => {
+  try { localStorage.setItem(KEY(cur.id), JSON.stringify(st)) } catch {}
+}
+const size = () => st.format.split("x").map(Number)
+
+// ---------------------------------------------------------------- the scene list
+const list = $("scenes")
+let group = ""
+SCENES.forEach((sc) => {
+  if (sc.group !== group) {
+    group = sc.group
+    const h = document.createElement("h3")
+    h.textContent = group
+    list.appendChild(h)
+  }
+  const b = document.createElement("button")
+  b.textContent = sc.name
+  b.dataset.id = sc.id
+  b.addEventListener("click", () => choose(sc.id))
+  list.appendChild(b)
+})
+
+// ---------------------------------------------------------------- the stage
+const fit = () => {
+  const [W, H] = size()
+  stage.style.width = W + "px"
+  stage.style.height = H + "px"
+  const box = $("center").getBoundingClientRect()
+  stage.style.transform = "translate(-50%, -50%) scale(" + Math.min((box.width - 48) / W, (box.height - 72) / H) + ")"
+}
+addEventListener("resize", () => st && fit())
+const root = createRoot(scene)
+const render = () => {
+  const sky = SKY[st.vibe]
+  root.render(React.createElement(SettHero3D, {
+    key: cur.id + ":" + version, modelUrl: cur.model + "?v=" + version, vibe: st.vibe, subject: "center",
+    zoom: st.zoom, turn: st.turn, tilt: st.tilt, panX: st.panX, panY: st.panY,
+    motion: st.motion, motionAmount: 1, grain: 0.15, scrim: 0, bottomFade: 0.3, fadeColor: "#060C1A",
+    skyTop: sky ? sky[0] : undefined, skyHorizon: sky ? sky[1] : undefined, flowColor: "#8DFF66", solarColor: "#FFB92B",
+    pixelRatio: SCALE, preserve: true,
+  }))
+}
+
+// ---------------------------------------------------------------- controls
+const ui = { format: $("format"), vibe: $("vibe"), zoom: $("zoom"), turn: $("turn"), tilt: $("tilt"), motion: $("motion"), showLabels: $("showLabels") }
+const showValues = () => {
+  $("zoomV").textContent = (+st.zoom).toFixed(2)
+  $("turnV").textContent = st.turn + "°"
+  $("tiltV").textContent = st.tilt + "°"
+}
+const syncUI = () => {
+  ui.format.value = st.format
+  ui.vibe.value = st.vibe
+  ui.zoom.value = st.zoom
+  ui.turn.value = st.turn
+  ui.tilt.value = st.tilt
+  ui.motion.checked = st.motion
+  ui.showLabels.checked = st.showLabels
+  stage.classList.toggle("nolabels", !st.showLabels)
+  $("rebuild").hidden = !cur.build
+  showValues()
+}
+for (const [k, el] of Object.entries(ui)) {
+  el.addEventListener("input", () => {
+    st[k] = el.type === "checkbox" ? el.checked : el.type === "range" ? +el.value : el.value
+    persist()
+    showValues()
+    if (k === "showLabels") return stage.classList.toggle("nolabels", !st.showLabels)
+    if (k === "format") fit(), drawLabels()
+    render()
+  })
+}
+$("resetView").addEventListener("click", () => {
+  // the labels go back by as much as the view moves
+  st.labels.forEach((l) => ((l.x -= st.panX), (l.y -= st.panY)))
+  Object.assign(st, { zoom: VIEW0.zoom, turn: VIEW0.turn, tilt: VIEW0.tilt, panX: 0, panY: 0 }, cur.view, { vibe: st.vibe })
+  persist()
+  syncUI()
+  drawLabels()
+  render()
+})
+// a slide scene again, from heroes.js (after a change to its code), saved next to the components
+$("rebuild").addEventListener("click", async () => {
+  status.textContent = "scène maken…"
+  const core = await import("./core.js?v=" + Date.now())
+  await core.loadModel("/")
+  const H3 = await import("./heroes.js?v=" + Date.now())
+  const r = await core.save(cur.file, await core.exportGroupGLB(H3[cur.build]()))
+  version = Date.now()
+  render()
+  status.textContent = "scène opnieuw gemaakt (" + Math.round(r.bytes / 1024) + " KB)"
+})
+
+// drag the scene to pan; the labels move along, so they stay on what they point at
+scene.addEventListener("pointerdown", (e) => {
+  const [W, H] = size()
+  const k = stage.getBoundingClientRect().width / W
+  const sx = e.clientX, sy = e.clientY, p0 = { x: st.panX, y: st.panY }, at0 = st.labels.map((l) => ({ x: l.x, y: l.y }))
+  let queued = false
+  select(-1)
+  scene.classList.add("panning")
+  scene.setPointerCapture(e.pointerId)
+  const move = (m) => {
+    const dx = (m.clientX - sx) / k / W, dy = (m.clientY - sy) / k / H
+    st.panX = p0.x + dx
+    st.panY = p0.y + dy
+    st.labels.forEach((l, i) => ((l.x = at0[i].x + dx), (l.y = at0[i].y + dy)))
+    if (!queued) {
+      queued = true
+      requestAnimationFrame(() => {
+        queued = false
+        render()
+        placeLabels()
+      })
+    }
+  }
+  const up = () => {
+    scene.classList.remove("panning")
+    scene.removeEventListener("pointermove", move)
+    scene.removeEventListener("pointerup", up)
+    persist()
+  }
+  scene.addEventListener("pointermove", move)
+  scene.addEventListener("pointerup", up)
+})
+
+// ---------------------------------------------------------------- labels
+function placeLabels() {
+  const [W, H] = size()
+  layer.querySelectorAll(".pill").forEach((el, i) => {
+    el.style.left = st.labels[i].x * W + "px"
+    el.style.top = st.labels[i].y * H + "px"
+  })
+}
+function drawLabels() {
+  layer.innerHTML = ""
+  st.labels.forEach((l, i) => {
+    const el = document.createElement("div")
+    el.className = "pill" + (i === sel ? " sel" : "")
+    el.style.setProperty("--c", COLORS[l.color] || COLORS.lime)
+    el.innerHTML = '<div class="body"><span class="ic">' + svg(l.icon, "#060C1A") + '</span><span class="tx" spellcheck="false"></span></div><div class="stem"></div><div class="dot"></div>'
+    const tx = el.querySelector(".tx")
+    tx.textContent = l.text
+    el.addEventListener("pointerdown", (e) => {
+      if (tx.isContentEditable) return
+      e.stopPropagation()
+      select(i)
+      const [W, H] = size()
+      const k = stage.getBoundingClientRect().width / W
+      const sx = e.clientX, sy = e.clientY, x0 = l.x, y0 = l.y
+      el.classList.add("drag")
+      el.setPointerCapture(e.pointerId)
+      const move = (m) => {
+        l.x = x0 + (m.clientX - sx) / k / W
+        l.y = y0 + (m.clientY - sy) / k / H
+        el.style.left = l.x * W + "px"
+        el.style.top = l.y * H + "px"
+      }
+      const up = () => {
+        el.classList.remove("drag")
+        el.removeEventListener("pointermove", move)
+        el.removeEventListener("pointerup", up)
+        persist()
+      }
+      el.addEventListener("pointermove", move)
+      el.addEventListener("pointerup", up)
+    })
+    el.addEventListener("dblclick", () => {
+      tx.contentEditable = "true"
+      tx.focus()
+      document.getSelection().selectAllChildren(tx)
+    })
+    tx.addEventListener("keydown", (e) => e.key === "Enter" && (e.preventDefault(), tx.blur()))
+    tx.addEventListener("blur", () => {
+      tx.contentEditable = "false"
+      l.text = tx.textContent.trim() || l.text
+      tx.textContent = l.text
+      persist()
+      drawList()
+    })
+    layer.appendChild(el)
+  })
+  placeLabels()
+  drawList()
+}
+// the list in the panel, and the editor for the chosen label
+function drawList() {
+  const box = $("labelList")
+  box.innerHTML = ""
+  if (!st.labels.length) box.innerHTML = '<div class="empty">Nog geen labels. Voeg er een toe met + Label.</div>'
+  st.labels.forEach((l, i) => {
+    const b = document.createElement("button")
+    b.className = i === sel ? "on" : ""
+    b.innerHTML = '<i style="background:rgb(' + (COLORS[l.color] || COLORS.lime) + ')"></i><span></span>'
+    b.querySelector("span").textContent = l.text
+    b.addEventListener("click", () => select(i))
+    box.appendChild(b)
+  })
+  const l = st.labels[sel]
+  $("editor").hidden = !l
+  if (!l) return
+  $("lText").value = l.text
+  $("lColors").innerHTML = ""
+  for (const [k, c] of Object.entries(COLORS)) {
+    const s = document.createElement("button")
+    s.style.background = "rgb(" + c + ")"
+    s.className = l.color === k ? "on" : ""
+    s.title = k
+    s.addEventListener("click", () => ((l.color = k), persist(), drawLabels()))
+    $("lColors").appendChild(s)
+  }
+  $("lIcons").innerHTML = ""
+  for (const k of Object.keys(ICON)) {
+    const s = document.createElement("button")
+    s.innerHTML = svg(k, "#dfe4f2", 20)
+    s.className = l.icon === k ? "on" : ""
+    s.title = k
+    s.addEventListener("click", () => ((l.icon = k), persist(), drawLabels()))
+    $("lIcons").appendChild(s)
+  }
+}
+function select(i) {
+  if (sel === i) return
+  sel = i
+  layer.querySelectorAll(".pill").forEach((el, k) => el.classList.toggle("sel", k === sel))
+  drawList()
+}
+$("lText").addEventListener("input", (e) => {
+  const l = st.labels[sel]
+  if (!l) return
+  l.text = e.target.value
+  layer.querySelectorAll(".pill .tx")[sel].textContent = l.text
+  const item = document.querySelectorAll("#labelList button span")[sel]
+  if (item) item.textContent = l.text
+  persist()
+})
+const remove = () => {
+  if (sel < 0) return
+  st.labels.splice(sel, 1)
+  sel = -1
+  persist()
+  drawLabels()
+}
+$("lDelete").addEventListener("click", remove)
+addEventListener("keydown", (e) => {
+  if ((e.key === "Delete" || e.key === "Backspace") && sel >= 0 && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable) remove()
+})
+$("addLabel").addEventListener("click", () => {
+  const used = st.labels.map((l) => l.color)
+  const color = Object.keys(COLORS).find((c) => !used.includes(c)) || "lime"
+  st.labels.push({ icon: "bolt", color, text: "Nieuw label", x: 0.5, y: 0.5 })
+  sel = st.labels.length - 1
+  persist()
+  drawLabels()
+  $("lText").focus()
+  $("lText").select()
+})
+
+// ---------------------------------------------------------------- choosing a scene
+function choose(id) {
+  cur = SCENES.find((s) => s.id === id) || SCENES[0]
+  st = load(cur)
+  sel = -1
+  version = Date.now()
+  list.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.id === cur.id))
+  try { localStorage.setItem("sett-studio:last", cur.id) } catch {}
+  syncUI()
+  fit()
+  drawLabels()
+  render()
+}
+let first = new URLSearchParams(location.search).get("scene")
+try { first = first || localStorage.getItem("sett-studio:last") } catch {}
+choose(first || SCENES[0].id)
+
+// ready to save once the scene shows
+setInterval(() => {
+  const gl = scene.querySelector("canvas")
+  const ready = !!gl && gl.parentElement.style.opacity === "1"
+  $("png").disabled = !ready
+  window.__slideReady = ready
+}, 300)
+
+// ---------------------------------------------------------------- the PNG
+// the sky (the component's own CSS background), the 3D canvas, the fade at the bottom and the
+// labels, drawn together at twice the stage's size
+const css = (el) => getComputedStyle(el).backgroundImage
+const colorsOf = (s) => s.match(/rgba?\([^)]+\)|#[0-9a-f]{3,8}/gi) || []
+function drawBackground(ctx, el, W, H) {
+  const bg = css(el)
+  const lin = bg.slice(bg.indexOf("linear-gradient"))
+  const stops = [...lin.matchAll(/(rgba?\([^)]+\))\s+([\d.]+)%/g)].map((m) => [m[1], +m[2] / 100])
+  const g = ctx.createLinearGradient(0, 0, 0, H)
+  stops.forEach(([c, p]) => g.addColorStop(p, c))
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, W, H)
+  const rad = bg.match(/radial-gradient\(([\d.]+)% ([\d.]+)% at ([\d.]+)% ([\d.]+)%,\s*(rgba?\([^)]+\))/)
+  if (rad) {
+    const [rx, ry, cx, cy] = rad.slice(1, 5).map((n) => +n / 100)
+    ctx.save()
+    ctx.translate(cx * W, cy * H)
+    ctx.scale(1, (ry * H) / (rx * W))
+    const r = rx * W
+    const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, r)
+    gr.addColorStop(0, rad[5])
+    gr.addColorStop(0.7, "rgba(255,255,255,0)")
+    gr.addColorStop(1, "rgba(255,255,255,0)")
+    ctx.fillStyle = gr
+    ctx.fillRect(-r, -r, 2 * r, 2 * r)
+    ctx.restore()
+  }
+}
+function drawFade(ctx, el, W, H) {
+  const h = parseFloat(el.style.height) / 100
+  const c = colorsOf(css(el))
+  const g = ctx.createLinearGradient(0, H, 0, H * (1 - h))
+  g.addColorStop(0, c[0])
+  g.addColorStop(1, c[1] || "rgba(0,0,0,0)")
+  ctx.fillStyle = g
+  ctx.fillRect(0, H * (1 - h), W, H * h)
+}
+// the labels, measured from the page (in the stage's own pixels)
+function drawPills(ctx) {
+  const [W] = size()
+  const sr = stage.getBoundingClientRect()
+  const k = sr.width / W
+  ctx.save()
+  ctx.scale(SCALE, SCALE)
+  layer.querySelectorAll(".pill").forEach((el, i) => {
+    const l = st.labels[i]
+    const c = COLORS[l.color] || COLORS.lime
+    const r = el.querySelector(".body").getBoundingClientRect()
+    const x = (r.left - sr.left) / k, y = (r.top - sr.top) / k, w = r.width / k, h = r.height / k
+    const dr = el.querySelector(".dot").getBoundingClientRect()
+    const cx = (dr.left + dr.width / 2 - sr.left) / k, cy = (dr.top + dr.height / 2 - sr.top) / k
+    // the stem and the glowing dot
+    const g = ctx.createLinearGradient(0, y + h, 0, cy)
+    g.addColorStop(0, "rgba(" + c + ",.15)")
+    g.addColorStop(1, "rgba(" + c + ",.9)")
+    ctx.fillStyle = g
+    ctx.fillRect(cx - 1, y + h, 2, cy - (y + h))
+    ctx.save()
+    ctx.shadowColor = "rgba(" + c + ",.9)"
+    ctx.shadowBlur = 18
+    ctx.fillStyle = "rgba(" + c + ",.25)"
+    ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.fill()
+    ctx.restore()
+    ctx.fillStyle = "rgb(" + c + ")"
+    ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill()
+    // the pill
+    ctx.save()
+    ctx.shadowColor = "rgba(0,0,0,.35)"
+    ctx.shadowBlur = 40
+    ctx.shadowOffsetY = 14
+    ctx.fillStyle = "rgba(6,12,26,.82)"
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, h / 2); ctx.fill()
+    ctx.restore()
+    ctx.strokeStyle = "rgba(223,228,244,.18)"
+    ctx.lineWidth = 1.5
+    ctx.beginPath(); ctx.roundRect(x + 0.75, y + 0.75, w - 1.5, h - 1.5, h / 2); ctx.stroke()
+    // the icon in its circle, the text
+    const ir = 23, icx = x + 11 + ir, icy = y + h / 2
+    ctx.fillStyle = "rgb(" + c + ")"
+    ctx.beginPath(); ctx.arc(icx, icy, ir, 0, Math.PI * 2); ctx.fill()
+    ctx.drawImage(iconImg[l.icon] || iconImg.bolt, icx - 13, icy - 13, 26, 26)
+    ctx.fillStyle = "#F4F6FB"
+    ctx.font = "600 26px Outfit, system-ui, sans-serif"
+    ctx.textBaseline = "middle"
+    ctx.fillText(l.text, icx + ir + 14, icy + 1)
+  })
+  ctx.restore()
+}
+$("png").addEventListener("click", async () => {
+  await document.fonts.load("600 26px Outfit").catch(() => {})
+  const box = scene.firstElementChild
+  const gl = box && box.querySelector("canvas")
+  if (!gl || gl.parentElement.style.opacity !== "1") return (status.textContent = "de scène laadt nog, even wachten…")
+  const [W, H] = size()
+  const out = document.createElement("canvas")
+  out.width = W * SCALE
+  out.height = H * SCALE
+  const ctx = out.getContext("2d")
+  drawBackground(ctx, box, out.width, out.height)
+  ctx.drawImage(gl, 0, 0, out.width, out.height)
+  const fade = box.lastElementChild
+  if (fade && fade !== gl.parentElement) drawFade(ctx, fade, out.width, out.height)
+  if (st.showLabels) drawPills(ctx)
+  out.toBlob((blob) => {
+    const a = document.createElement("a")
+    a.href = URL.createObjectURL(blob)
+    a.download = "sett-" + cur.id + "-" + out.width + "x" + out.height + ".png"
+    a.click()
+    status.textContent = "PNG opgeslagen (" + out.width + "×" + out.height + ")"
+  }, "image/png")
+})
+</script>
+</body>
+</html>

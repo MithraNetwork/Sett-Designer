@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sett studio — V2</title>
+<style>
+  html,body{ margin:0; background:#06070A; }
+  .nav{ position:fixed; top:22px; left:50%; transform:translateX(-50%); z-index:50; display:flex; gap:26px; padding:14px 26px; border-radius:999px;
+    background:rgba(20,22,28,.55); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.08); font:500 15px Outfit, system-ui; color:#fff; }
+  .bar{ position:fixed; right:16px; bottom:16px; z-index:60; display:flex; gap:6px; padding:6px; border-radius:999px; background:rgba(8,11,28,.85); border:1px solid rgba(255,255,255,.12); }
+  .bar button{ font:600 13px Outfit, system-ui; color:#dfe4f2; background:none; border:0; padding:8px 14px; border-radius:999px; cursor:pointer; }
+  .bar button.on{ background:#DFFF00; color:#000; }
+  .bar a.shots{ font:600 13px Outfit, system-ui; color:#dfe4f2; padding:8px 14px; border-radius:999px; text-decoration:none; box-shadow:inset 0 0 0 1px rgba(255,255,255,.2); }
+</style>
+<script>
+if (/[?&]headless\b/.test(location.search)) {
+  Object.defineProperty(document, "hidden", { get: () => false })
+  window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 16)
+  window.cancelAnimationFrame = (id) => clearTimeout(id)
+  // a background tab never runs IntersectionObserver: poll the rects instead
+  window.IntersectionObserver = class {
+    constructor(cb, o = {}) {
+      this.cb = cb; this.els = new Map()
+      const m = parseFloat(o.rootMargin || "0") || 0
+      this.t = setInterval(() => {
+        const out = []
+        this.els.forEach((was, el) => {
+          const r = el.getBoundingClientRect()
+          const now = r.bottom > -m && r.top < innerHeight + m && r.right > -m && r.left < innerWidth + m && (r.width > 0 || r.height > 0)
+          if (now !== was) { this.els.set(el, now); out.push({ target: el, isIntersecting: now, intersectionRatio: now ? 1 : 0, boundingClientRect: r }) }
+        })
+        if (out.length) this.cb(out, this)
+      }, 120)
+    }
+    observe(el) { this.els.set(el, null) }
+    unobserve(el) { this.els.delete(el) }
+    disconnect() { this.els.clear(); clearInterval(this.t) }
+    takeRecords() { return [] }
+  }
+}
+</script>
+</head>
+<body>
+<div id="nav" style="position:fixed;top:0;left:0;right:0;z-index:50"></div>
+<div id="page"></div>
+<div id="footer"></div>
+<nav class="bar">
+  <button data-p="details">Details</button>
+  <button data-p="particulieren">Particulieren</button>
+  <button data-p="bedrijven">Bedrijven</button>
+  <button data-p="gemeenten">Gemeenten</button>
+  <button data-p="contact">Contact</button>
+  <button data-p="qa">Q&amp;A</button>
+  <button data-p="over">Over ons</button>
+  <button data-p="preorder">Pre-order</button>
+  <button data-p="partners">Partners</button>
+  <button data-p="bevestigd">Bevestigd</button>
+  <button data-p="roadmap">Roadmap</button>
+  <button data-p="bedankt">Bedankt</button>
+  <button data-p="blog">Blog</button>
+  <button data-p="artikel">Artikel</button>
+  <button data-p="voorwaarden">Voorwaarden</button>
+  <button data-p="privacy">Privacy</button>
+  <a href="./screenshots.html" class="shots">Screenshots</a>
+</nav>
+<script type="module">
+import React from "https://esm.sh/react@18.3.1"
+import { createRoot } from "https://esm.sh/react-dom@18.3.1/client"
+import { PAGES } from "./v2-pages.js"
+
+// ?w=390: the page at a phone's width (the sections follow their own width)
+const w = new URLSearchParams(location.search).get("w")
+if (w) Object.assign(document.getElementById("page").style, { width: w + "px", margin: "0 auto", outline: "1px solid #333" })
+import SettNav from "./lib/SettNav.js"
+createRoot(document.getElementById("nav")).render(React.createElement(SettNav, { theme: "auto" }))
+// the site footer under every page, as on the site
+import SettFooter from "./lib/SettFooter.js"
+createRoot(document.getElementById("footer")).render(React.createElement(SettFooter, {}))
+const root = createRoot(document.getElementById("page"))
+function show(name) {
+  root.render(React.createElement(React.Fragment, null, ...PAGES[name]().map((el, i) => React.cloneElement(el, { key: name + i }))))
+  document.querySelectorAll(".bar button").forEach((b) => b.classList.toggle("on", b.dataset.p === name))
+  history.replaceState(null, "", location.search + "#" + name)
+}
+let current = (location.hash || "#details").slice(1)
+if (!PAGES[current]) current = "details"
+document.querySelectorAll(".bar button").forEach((b) => b.addEventListener("click", () => { window.scrollTo(0, 0); show((current = b.dataset.p)) }))
+show(current)
+</script>
+</body>
+</html>
