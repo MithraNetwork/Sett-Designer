@@ -79,6 +79,9 @@ interface Props {
     logoColor?: string
     accentColor?: string
     onToggle?: (exploded: boolean) => void
+    // render sharpness (the studio's PNGs), and keeping the drawn frame readable for them
+    pixelRatio?: number
+    preserve?: boolean
     style?: React.CSSProperties
 }
 
@@ -143,9 +146,9 @@ export default function SettBox3D(props: Props) {
         let raf = 0
         let needs = true // render on demand: set whenever something visible changed
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: !!props.preserve })
         const narrow = window.innerWidth <= 760
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, narrow ? 1.5 : 2))
+        renderer.setPixelRatio(props.pixelRatio || Math.min(window.devicePixelRatio || 1, narrow ? 1.5 : 2))
         renderer.outputColorSpace = THREE.SRGBColorSpace
         renderer.toneMapping = THREE.ACESFilmicToneMapping
         renderer.toneMappingExposure = 0.95

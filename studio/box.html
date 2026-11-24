@@ -1,27 +1,15 @@
 <!doctype html>
 <html lang="nl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Sett studio — interactive box</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=Geist+Mono:wght@500&display=swap" rel="stylesheet" />
-<style>
-  html,body{ margin:0; font-family:Outfit, system-ui, sans-serif; color:#111212; background:#F7EDD5; transition:background .3s ease; }
-  body.dark{ background:#0D1130; color:#fff; }
-  header{ max-width:1100px; margin:0 auto; padding:64px 24px 8px; }
-  .kicker{ font:500 14px "Geist Mono", monospace; color:#6b6f78; margin:0 0 10px; }
-  body.dark .kicker{ color:#97a0c2; }
-  h1{ font-size:clamp(30px, 4vw, 56px); line-height:1.05; margin:0 0 12px; font-weight:800; letter-spacing:-0.015em; }
-  header p{ margin:0; font-size:18px; line-height:1.55; max-width:680px; color:#4a5270; }
-  body.dark header p{ color:#c3c9dc; }
-  #box{ position:relative; width:100%; max-width:1100px; height:min(72vh, 720px); margin:0 auto 64px; }
-  @media (max-width:760px){ #box{ height:78vh; } header{ padding-top:40px; } }
-  .bar{ position:fixed; right:16px; bottom:16px; z-index:10; display:flex; flex-wrap:wrap; gap:6px; padding:6px; border-radius:22px;
-    background:rgba(8,11,28,0.78); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.12); max-width:calc(100vw - 32px); }
-  .bar a, .bar button{ font:600 13px Outfit, system-ui; color:#dfe4f2; background:none; border:0; padding:8px 14px; border-radius:999px; cursor:pointer; text-decoration:none; }
-  .bar a:hover, .bar button:hover{ background:rgba(255,255,255,0.1); }
-  .bar button.on{ background:#fff; color:#0D1130; }
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sett Designer · Sett-box</title>
+<!-- The interactive Sett box (SettBox3D, the site's component) in the studio's layout: the box
+     in the middle, its settings on the right (background, framing, behaviour, colours, the
+     spec hotspots), a PNG of the box. Everything you set is kept in this browser. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600&display=block" rel="stylesheet">
 <script>
 // ?headless: automated screenshots run in a background tab, which pauses
 // animation frames. Only with the flag — a normal visit is untouched.
@@ -31,55 +19,258 @@ if (/[?&]headless\b/.test(location.search)) {
   window.cancelAnimationFrame = (id) => clearTimeout(id)
 }
 </script>
+<style>
+  :root{ color-scheme:dark; --bg:#0c0e13; --panel:#12151c; --line:#232836; --ink:#dfe4f2; --muted:#8a93a8; --lime:#8DFF66; }
+  *{ box-sizing:border-box; }
+  html, body{ margin:0; height:100%; background:var(--bg); font:500 13px/1.4 Outfit, system-ui, sans-serif; color:var(--ink); overflow:hidden; }
+  .app{ display:grid; grid-template-columns:1fr 320px; height:calc(100vh - var(--sd-nav, 56px)); }
+  aside{ background:var(--panel); border-left:1px solid var(--line); overflow:auto; padding:16px 16px 24px; }
+  h3{ margin:18px 4px 8px; font:600 10.5px "Geist Mono", ui-monospace, monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  h3:first-of-type{ margin-top:0; }
+  .center{ position:relative; overflow:hidden; background:radial-gradient(60% 60% at 50% 40%, #171b24, #0c0e13); }
+  .stage{ position:absolute; left:50%; top:calc(50% - 14px); transform-origin:center; box-shadow:0 20px 80px rgba(0,0,0,.55); transition:background .3s; overflow:hidden; }
+  .stage > div{ position:absolute; inset:0; }
+  .hint{ position:absolute; left:16px; bottom:12px; color:var(--muted); font-size:12px; }
+  .row{ display:flex; align-items:center; gap:10px; margin:8px 4px; }
+  .row label{ width:62px; color:var(--muted); flex:none; }
+  .row input[type=range]{ flex:1; accent-color:var(--lime); }
+  .row output{ width:34px; text-align:right; color:var(--muted); font:500 11px "Geist Mono", monospace; }
+  select, input[type=text], button.b{ font:inherit; color:var(--ink); background:#1a1e28; border:1px solid var(--line); border-radius:8px; padding:7px 10px; }
+  select, input[type=text]{ flex:1; min-width:0; }
+  button.b{ cursor:pointer; }
+  button.b:hover{ border-color:#384057; }
+  button.b.main{ width:100%; margin-top:6px; background:var(--lime); color:#060C1A; border-color:var(--lime); font-weight:700; padding:11px; }
+  .btns{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 4px; }
+  .check{ display:flex; align-items:center; gap:8px; margin:8px 4px; color:var(--muted); }
+  .status{ margin:8px 4px 0; color:var(--lime); min-height:18px; font-size:12px; }
+  .bgs, .swatches{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 4px; }
+  .bgs button{ width:34px; height:34px; border-radius:9px; border:2px solid transparent; cursor:pointer; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+  .bgs button.on{ border-color:var(--lime); }
+  .colors{ display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin:8px 4px; }
+  .colors label{ display:flex; align-items:center; gap:8px; color:var(--muted); }
+  .colors input[type=color]{ width:26px; height:26px; padding:0; border:0; background:none; cursor:pointer; }
+  .specs{ display:grid; gap:8px; margin:8px 4px; }
+  .spec{ display:grid; grid-template-columns:1fr auto; gap:6px; padding:10px; border-radius:10px; background:#151922; border:1px solid var(--line); }
+  .spec select, .spec input{ width:100%; }
+  .spec .x{ grid-row:1; grid-column:2; width:30px; padding:4px 0; }
+  .spec input{ grid-column:1 / span 2; }
+</style>
+<script type="module" src="./nav.js"></script>
 </head>
 <body>
-<header>
-  <p class="kicker">Sett is je energiehub</p>
-  <h1>Neem je energievoorziening in eigen hand.</h1>
-  <p>Gecertificeerde LiFePO4-accu's. Stalen bak (thermisch verzinkt). Draai de Sett rond en open hem om te zien waar alles op gebouwd is.</p>
-</header>
-<div id="box"></div>
+<div class="app">
+  <main class="center" id="center">
+    <div class="stage" id="stage"><div id="box"></div></div>
+    <div class="hint">Sleep om te draaien · klik op de Sett of de knop om hem te openen · klik op een punt voor de specificatie</div>
+  </main>
+  <aside>
+    <h3>Beeld</h3>
+    <div class="row"><label>Formaat</label>
+      <select id="format">
+        <option value="1920x1080">16:9 · 3840×2160</option>
+        <option value="1440x1080">4:3 · 2880×2160</option>
+        <option value="1080x1080">1:1 · 2160×2160</option>
+        <option value="1080x1350">4:5 · 2160×2700</option>
+      </select>
+    </div>
+    <div class="row"><label>Achtergrond</label></div>
+    <div class="bgs" id="bgs"></div>
+    <div class="row"><label>Zoom</label><input id="zoom" type="range" min="0.6" max="1.6" step="0.05"><output id="zoomV"></output></div>
+    <div class="row"><label>Hoogte</label><input id="elevation" type="range" min="12" max="70" step="1"><output id="elevationV"></output></div>
+    <div class="btns"><button class="b" id="resetView">Beeld herstellen</button></div>
 
-<nav class="bar">
-  <button data-k="autoRotate" class="on">Auto-rotate</button>
-  <button data-k="always">Hotspots altijd</button>
-  <button data-k="startExploded">Start geopend</button>
-  <button id="bg">Donker</button>
-  <a href="./">← Sett Designer</a>
-</nav>
+    <h3>Gedrag</h3>
+    <label class="check"><input id="autoRotate" type="checkbox"> Langzaam ronddraaien</label>
+    <label class="check"><input id="startExploded" type="checkbox"> Geopend starten</label>
+    <label class="check"><input id="showButton" type="checkbox"> Knop om te openen</label>
+    <label class="check"><input id="chargePulse" type="checkbox"> Gloed bij laden</label>
+    <div class="row"><label>Specs</label>
+      <select id="showHotspots">
+        <option value="exploded">Als hij open is</option>
+        <option value="always">Altijd</option>
+        <option value="never">Nooit</option>
+      </select>
+    </div>
+    <div class="btns"><button class="b" id="toggle">Openen / sluiten</button></div>
 
+    <h3>Kleuren</h3>
+    <div class="colors" id="colors"></div>
+
+    <h3>Specificaties</h3>
+    <div class="specs" id="specs"></div>
+    <div class="btns"><button class="b" id="addSpec">+ Specificatie</button><button class="b" id="resetSpecs">Standaard</button></div>
+
+    <h3>Exporteren</h3>
+    <button class="b main" id="png">Download PNG</button>
+    <div class="status" id="status"></div>
+  </aside>
+</div>
 <script type="module">
 import React from "https://esm.sh/react@18.3.1"
 import { createRoot } from "https://esm.sh/react-dom@18.3.1/client"
 import SettBox3D from "./lib/SettBox3D.js"
 
-const root = createRoot(document.getElementById("box"))
-const opts = { autoRotate: true, always: false, startExploded: false }
-let key = 0
-function render(remount) {
-  if (remount) key++ // "start opened" only applies to a fresh mount
+const SCALE = 2
+const $ = (id) => document.getElementById(id)
+const stage = $("stage"), status = $("status")
+// backgrounds: the site's cream, its navy, its ink, white, and none (a PNG with transparency)
+const BGS = [
+  { k: "cream", c: "#F7EDD5" },
+  { k: "paper", c: "#F6F6F6" },
+  { k: "white", c: "#FFFFFF" },
+  { k: "navy", c: "#0D1130" },
+  { k: "ink", c: "#060C1A" },
+  { k: "none", c: "transparent" },
+]
+const COLORS = [
+  ["accentColor", "Accent", "#25CF77"], ["binColor", "Behuizing", "#95A3C2"], ["ribColor", "Koelribben", "#95A3C2"], ["batteryColor", "Accu's", "#25CF77"],
+  ["blockColor", "Blokken", "#2544CF"], ["inverterColor", "Omvormers", "#95A3C2"], ["coolingColor", "Koeling", "#525252"], ["poleColor", "Laadpaal", "#363D52"], ["logoColor", "Logo", "#FFFFFF"],
+]
+const ANCHORS = [["batteries", "Accu's"], ["blocks", "Batterijblokken"], ["inverter", "Omvormers"], ["cooling", "Koeling"], ["partition", "Tussenschot"], ["pole", "Laadpaal"], ["vent", "Ventilatie / sensoren"], ["enclosure", "Behuizing (zijkant)"], ["ribs", "Koelribben"], ["corner", "Hoek (afmetingen)"]]
+const SPECS = [
+  { anchor: "batteries", title: "Accu capaciteit", value: "96 kWh LiFePO4" },
+  { anchor: "blocks", title: "Max load", value: "50 kW (meer bij meer boxen)" },
+  { anchor: "inverter", title: "Netaansluiting", value: "tot 3×50A (klein)" },
+  { anchor: "pole", title: "Laadpunten", value: "2× 11 kW of 1× 22 kW" },
+  { anchor: "cooling", title: "Koeling", value: "Actief en passief (koelribben)" },
+  { anchor: "partition", title: "Brandveiligheid", value: "Aerosol per compartiment" },
+  { anchor: "vent", title: "Bewaking", value: "Load · temp · vocht · 4G" },
+  { anchor: "corner", title: "Afmetingen", value: "4 × 1,5 × 0,7 m" },
+  { anchor: "enclosure", title: "Materiaal", value: "S235-staal, verzinkt en gecoat" },
+  { anchor: "ribs", title: "Levensduur", value: "20+ jaar" },
+]
+const VIEW0 = { format: "1920x1080", bg: "cream", zoom: 1, elevation: 30 }
+const S0 = { ...VIEW0, autoRotate: true, startExploded: false, showButton: true, chargePulse: true, showHotspots: "exploded", colors: Object.fromEntries(COLORS.map(([k, , c]) => [k, c])), specs: SPECS.map((s) => ({ ...s })) }
+const STORE = "sett-studio:box"
+let st
+try { st = JSON.parse(localStorage.getItem(STORE) || "null") } catch {}
+st = { ...S0, ...(st || {}), colors: { ...S0.colors, ...((st && st.colors) || {}) } }
+const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(st)) } catch {} }
+const size = () => st.format.split("x").map(Number)
+const bgColor = () => (BGS.find((b) => b.k === st.bg) || BGS[0]).c
+
+// ---------------------------------------------------------------- the stage
+const fit = () => {
+  const [W, H] = size()
+  stage.style.width = W + "px"
+  stage.style.height = H + "px"
+  const box = $("center").getBoundingClientRect()
+  stage.style.transform = "translate(-50%, -50%) scale(" + Math.min((box.width - 48) / W, (box.height - 72) / H) + ")"
+  // transparent: a checkerboard behind it, so you can see it is
+  stage.style.background = st.bg === "none" ? "repeating-conic-gradient(#20242e 0% 25%, #171a22 0% 50%) 50% / 32px 32px" : bgColor()
+}
+addEventListener("resize", fit)
+const root = createRoot($("box"))
+let key = 0, open = st.startExploded
+const render = (remount) => {
+  if (remount) key++
   root.render(React.createElement(SettBox3D, {
-    key,
-    modelUrl: "/framer/sett-box.glb",
-    autoRotate: opts.autoRotate,
-    showHotspots: opts.always ? "always" : "exploded",
-    startExploded: opts.startExploded,
-    onToggle: (open) => console.log("SettBox3D:", open ? "opened" : "closed"),
+    key, modelUrl: "/framer/sett-box.glb",
+    autoRotate: st.autoRotate, startExploded: open, showButton: st.showButton, chargePulse: st.chargePulse,
+    showHotspots: st.showHotspots, hotspots: st.specs.filter((s) => s.title.trim()),
+    zoom: st.zoom, elevation: st.elevation, ...st.colors,
+    exploreLabel: "Bekijk de binnenkant", closeLabel: "Sluiten",
+    onToggle: (o) => (open = o),
+    pixelRatio: SCALE, preserve: true,
   }))
 }
-render()
-document.querySelectorAll(".bar button[data-k]").forEach((b) =>
-  b.addEventListener("click", () => {
-    const k = b.dataset.k
-    opts[k] = !opts[k]
-    b.classList.toggle("on", opts[k])
-    render(k === "startExploded")
-  })
-)
-document.getElementById("bg").addEventListener("click", (e) => {
-  document.body.classList.toggle("dark")
-  e.currentTarget.classList.toggle("on")
+
+// ---------------------------------------------------------------- controls
+BGS.forEach((b) => {
+  const el = document.createElement("button")
+  el.title = b.k
+  el.style.background = b.k === "none" ? "repeating-conic-gradient(#3a3f4c 0% 25%, #22262f 0% 50%) 50% / 12px 12px" : b.c
+  el.addEventListener("click", () => ((st.bg = b.k), persist(), syncUI(), fit()))
+  $("bgs").appendChild(el)
 })
+COLORS.forEach(([k, label]) => {
+  const l = document.createElement("label")
+  l.innerHTML = '<input type="color"><span></span>'
+  l.querySelector("span").textContent = label
+  const inp = l.querySelector("input")
+  inp.dataset.k = k
+  inp.addEventListener("input", () => ((st.colors[k] = inp.value), persist(), render()))
+  $("colors").appendChild(l)
+})
+const CHECKS = ["autoRotate", "startExploded", "showButton", "chargePulse"]
+const RANGES = ["zoom", "elevation"]
+function syncUI() {
+  $("format").value = st.format
+  $("showHotspots").value = st.showHotspots
+  RANGES.forEach((k) => ($(k).value = st[k]))
+  CHECKS.forEach((k) => ($(k).checked = st[k]))
+  $("zoomV").textContent = (+st.zoom).toFixed(2)
+  $("elevationV").textContent = st.elevation + "°"
+  $("bgs").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.title === st.bg))
+  $("colors").querySelectorAll("input").forEach((i) => (i.value = st.colors[i.dataset.k]))
+}
+RANGES.forEach((k) => $(k).addEventListener("input", () => ((st[k] = +$(k).value), persist(), syncUI(), render())))
+CHECKS.forEach((k) => $(k).addEventListener("input", () => {
+  st[k] = $(k).checked
+  persist()
+  if (k === "startExploded") open = st.startExploded
+  render(k === "startExploded")
+}))
+$("format").addEventListener("input", () => ((st.format = $("format").value), persist(), fit()))
+$("showHotspots").addEventListener("input", () => ((st.showHotspots = $("showHotspots").value), persist(), render()))
+$("resetView").addEventListener("click", () => (Object.assign(st, { zoom: VIEW0.zoom, elevation: VIEW0.elevation }), persist(), syncUI(), render(true)))
+$("toggle").addEventListener("click", () => {
+  open = !open
+  render(true)
+})
+
+// the spec hotspots: a part, a title and a value each
+function drawSpecs() {
+  const box = $("specs")
+  box.innerHTML = ""
+  st.specs.forEach((s, i) => {
+    const d = document.createElement("div")
+    d.className = "spec"
+    d.innerHTML = '<select>' + ANCHORS.map(([k, t]) => '<option value="' + k + '">' + t + "</option>").join("") + '</select><button class="b x" title="Verwijderen">×</button><input type="text" placeholder="Titel"><input type="text" placeholder="Waarde">'
+    const [sel] = d.getElementsByTagName("select")
+    const [title, value] = d.getElementsByTagName("input")
+    sel.value = s.anchor
+    title.value = s.title
+    value.value = s.value
+    sel.addEventListener("input", () => ((s.anchor = sel.value), persist(), render()))
+    title.addEventListener("input", () => ((s.title = title.value), persist(), render()))
+    value.addEventListener("input", () => ((s.value = value.value), persist(), render()))
+    d.querySelector(".x").addEventListener("click", () => (st.specs.splice(i, 1), persist(), drawSpecs(), render()))
+    box.appendChild(d)
+  })
+}
+$("addSpec").addEventListener("click", () => (st.specs.push({ anchor: "batteries", title: "Nieuw", value: "" }), persist(), drawSpecs(), render()))
+$("resetSpecs").addEventListener("click", () => ((st.specs = SPECS.map((s) => ({ ...s }))), persist(), drawSpecs(), render()))
+
+// ---------------------------------------------------------------- the PNG: the background and the 3D (the spec cards and the button are left out)
+$("png").addEventListener("click", () => {
+  const gl = $("box").querySelector("canvas")
+  if (!gl) return (status.textContent = "de Sett laadt nog, even wachten…")
+  const [W, H] = size()
+  const out = document.createElement("canvas")
+  out.width = W * SCALE
+  out.height = H * SCALE
+  const ctx = out.getContext("2d")
+  if (st.bg !== "none") {
+    ctx.fillStyle = bgColor()
+    ctx.fillRect(0, 0, out.width, out.height)
+  }
+  // the canvas may not fill the stage exactly: drawn where it sits
+  const sr = stage.getBoundingClientRect(), gr = gl.getBoundingClientRect(), k = out.width / sr.width
+  ctx.drawImage(gl, (gr.left - sr.left) * k, (gr.top - sr.top) * k, gr.width * k, gr.height * k)
+  out.toBlob((blob) => {
+    const a = document.createElement("a")
+    a.href = URL.createObjectURL(blob)
+    a.download = "sett-box-" + (open ? "open" : "dicht") + "-" + out.width + "x" + out.height + ".png"
+    a.click()
+    status.textContent = "PNG opgeslagen (" + out.width + "×" + out.height + ")"
+  }, "image/png")
+})
+
+syncUI()
+drawSpecs()
+fit()
+render()
 </script>
 </body>
 </html>
