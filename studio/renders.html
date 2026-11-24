@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sett render studio</title>
+<style>
+  :root{ --bg:#f3f1ec; --ink:#111212; --dim:#6b6f78; --line:#dcd8cf; }
+  body{ margin:0; font:14px/1.45 "Outfit", system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  header{ padding:16px 20px; display:flex; gap:12px; align-items:center; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
+  header h1{ font-size:16px; margin:0 12px 0 0; }
+  button{ font:inherit; border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 14px; cursor:pointer; }
+  #status{ color:var(--dim); }
+  main{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; padding:20px; }
+  figure{ margin:0; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  figure .img{ aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; background:
+      repeating-conic-gradient(#f4f4f4 0% 25%, #fbfbfb 0% 50%) 50% / 20px 20px; }
+  figure.dark .img{ background:#0d1130; }
+  figure img{ max-width:100%; max-height:100%; display:block; }
+  figcaption{ padding:10px 12px; font-size:12px; color:var(--dim); display:flex; justify-content:space-between; gap:8px; }
+  figcaption b{ color:var(--ink); font-weight:600; }
+  canvas#gl{ position:fixed; left:-99999px; top:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sett render studio</h1>
+  <button id="all">Render all</button>
+  <button id="heroes">Export page-hero GLBs</button>
+  <button id="box">Export Sett box GLB</button>
+  <button id="scroll">Export scroll-scene GLBs</button>
+  <a href="./heroes.html" style="margin-left:auto">Page heroes →</a>
+  <a href="./box.html">Interactive box →</a>
+  <a href="./screenshots.html">Screenshots →</a>
+  <span id="status">loading model…</span>
+</header>
+<main id="grid"></main>
+<canvas id="gl"></canvas>
+<script type="module">
+import { createStudio, loadModel, save } from "./core.js"
+import { SCENES } from "./scenes.js"
+import { SCROLL, CARD } from "./scroll.js"
+
+const status = document.getElementById("status")
+const grid = document.getElementById("grid")
+const studio = createStudio(document.getElementById("gl"))
+window.__studio = studio
+await loadModel("/")
+status.textContent = "ready — " + SCENES.length + " scenes"
+
+const cards = {}
+SCENES.forEach((s) => {
+  const f = document.createElement("figure")
+  if (s.dark) f.className = "dark"
+  f.innerHTML = '<div class="img"></div><figcaption><b>' + s.name + '</b><span>' + (s.section || "") + '</span></figcaption>'
+  f.addEventListener("click", () => run(s))
+  grid.appendChild(f)
+  cards[s.name] = f
+})
+
+async function run(s) {
+  const t0 = performance.now()
+  studio.clear()
+  studio.light(s.light || "day", s.lightOver || {})
+  s.build(studio)
+  // a scene that also turns on scroll is framed to hold across the whole turn
+  const shot = Object.assign({ width: 2400, height: 1600, ss: 2 }, s.shot || {}, { twist: SCROLL[s.name]?.twist ?? 0 })
+  const { blob, canvas } = await studio.render(shot)
+  const res = await save(s.name + ".png", blob)
+  // its card version: a full-bleed crop for the boxed images, same light and shadows
+  const card = SCROLL[s.name]?.card
+  if (card) {
+    studio.clear()
+    studio.light(s.light || "day", s.lightOver || {})
+    s.build(studio)
+    // framed exactly like the scene's own shot (as its GLB), then the card region at CARD size
+    const c = await studio.render(Object.assign({ width: 2400, height: 1600, ss: 2 }, s.shot || {}, { card, twist: SCROLL[s.name].twist ?? 0, out: CARD }))
+    await save("card-" + s.name + ".png", c.blob)
+  }
+  const img = cards[s.name].querySelector(".img")
+  img.innerHTML = ""
+  const el = new Image()
+  el.src = canvas.toDataURL("image/png")
+  img.appendChild(el)
+  return { name: s.name, ms: Math.round(performance.now() - t0), bytes: res.bytes, w: shot.width, h: shot.height }
+}
+window.__run = async (names) => {
+  const out = []
+  for (const s of SCENES) if (!names || names.includes(s.name)) out.push(await run(s))
+  return out
+}
+document.getElementById("all").addEventListener("click", async () => {
+  status.textContent = "rendering…"
+  const r = await window.__run()
+  status.textContent = "rendered " + r.length
+})
+// the realtime assets: the /particulieren and /bedrijven hero scenes (for SettHero3D)
+// and the unit on its own (for SettBox3D) — written next to the components in framer/
+document.getElementById("heroes").addEventListener("click", async () => {
+  const core = await import("./core.js")
+  const H = await import("./heroes.js")
+  status.textContent = "exporting heroes…"
+  const a = await save("sett-hero-particulieren.glb", await core.exportGroupGLB(H.heroParticulieren()))
+  const b = await save("sett-hero-bedrijven.glb", await core.exportGroupGLB(H.heroBedrijven()))
+  status.textContent = "heroes: " + Math.round(a.bytes / 1024) + " KB + " + Math.round(b.bytes / 1024) + " KB"
+})
+document.getElementById("box").addEventListener("click", async () => {
+  const core = await import("./core.js")
+  const r = await save("sett-box.glb", await core.exportSettGLB())
+  status.textContent = "box: " + Math.round(r.bytes / 1024) + " KB"
+})
+// the scroll-driven scenes (SettScrollScene): the composition, the PNG's exact
+// camera + lights + baked contact shadow, and the scroll effect, per scene
+async function exportScroll(name) {
+  const core = await import("./core.js")
+  const s = SCENES.find((x) => x.name === name)
+  studio.clear()
+  studio.light(s.light || "day", s.lightOver || {})
+  s.build(studio)
+  const cfg = SCROLL[name]
+  const shot = Object.assign({ width: 2400, height: 1600 }, s.shot || {}, { twist: cfg.twist ?? 0 })
+  const { meta, contactMesh } = studio.shot(shot)
+  if (contactMesh) studio.root.add(contactMesh)
+  studio.root.userData.sett = { ...meta, scroll: cfg, name }
+  const blob = await core.exportGroupGLB(studio.root, { keepNormals: true })
+  if (contactMesh) studio.root.remove(contactMesh)
+  delete studio.root.userData.sett
+  return save("sett-scroll-" + name + ".glb", blob)
+}
+window.__exportScroll = async (names = Object.keys(SCROLL)) => {
+  const out = []
+  for (const n of names) out.push([n, Math.round((await exportScroll(n)).bytes / 1024) + " KB"])
+  return out
+}
+document.getElementById("scroll").addEventListener("click", async () => {
+  status.textContent = "exporting scroll scenes…"
+  const r = await window.__exportScroll()
+  status.textContent = "scroll scenes: " + r.length
+})
+window.__ready = true
+</script>
+</body>
+</html>

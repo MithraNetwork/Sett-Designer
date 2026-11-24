@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sett Designer · assets</title>
+<!-- The asset library: every ready-made image of Sett (the scene renders, the card images,
+     the photos and videos, the documents), listed by the studio server from framer/assets/
+     (/studio/assets.json), to look at and download. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600&display=block" rel="stylesheet">
+<style>
+  :root{ color-scheme:dark; --ink:#060C1A; --ink2:#0B1224; --text:#F4F6FB; --muted:rgba(223,228,244,.62); --line:rgba(223,228,244,.1); --lime:#8DFF66; }
+  *{ box-sizing:border-box; }
+  html, body{ margin:0; background:var(--ink); color:var(--text); font:400 15px/1.5 Outfit, system-ui, sans-serif; }
+  a{ color:inherit; text-decoration:none; }
+  .wrap{ max-width:1440px; margin:0 auto; padding:0 40px 80px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding:26px 0; }
+  .back{ font:600 12px "Geist Mono", monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .back:hover{ color:var(--text); }
+  h1{ font-weight:800; font-size:clamp(36px, 4.6vw, 64px); line-height:1; letter-spacing:-.03em; margin:28px 0 10px; }
+  .lead{ color:var(--muted); font-size:17px; margin:0 0 30px; max-width:640px; }
+  .bar{ position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:14px 0; background:linear-gradient(var(--ink) 75%, transparent); }
+  .tabs{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tabs button{ font:600 14px Outfit, system-ui; color:var(--muted); background:var(--ink2); border:1px solid var(--line); border-radius:999px; padding:8px 15px; cursor:pointer; }
+  .tabs button i{ font:500 11px "Geist Mono", monospace; font-style:normal; opacity:.7; margin-left:6px; }
+  .tabs button.on{ background:var(--text); color:var(--ink); border-color:var(--text); }
+  .search{ margin-left:auto; font:inherit; color:var(--text); background:var(--ink2); border:1px solid var(--line); border-radius:999px; padding:9px 16px; width:260px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; margin-top:10px; }
+  .tile{ display:flex; flex-direction:column; border-radius:18px; overflow:hidden; background:var(--ink2); box-shadow:inset 0 0 0 1px var(--line); cursor:pointer; transition:transform .25s, box-shadow .25s; }
+  .tile:hover{ transform:translateY(-3px); box-shadow:inset 0 0 0 1px rgba(223,228,244,.25); }
+  .thumb{ position:relative; aspect-ratio:3/2; background:radial-gradient(90% 90% at 50% 35%, #1c2a52, #0d1530); overflow:hidden; }
+  .thumb img, .thumb video{ width:100%; height:100%; object-fit:contain; display:block; }
+  .kind-photo .thumb img, .kind-video .thumb img, .kind-video .thumb video, .kind-card .thumb img{ object-fit:cover; }
+  .thumb .doc{ position:absolute; inset:0; display:grid; place-items:center; color:var(--lime); }
+  .thumb .doc svg{ width:56px; height:56px; }
+  .thumb .play{ position:absolute; right:10px; bottom:10px; width:30px; height:30px; border-radius:50%; background:rgba(6,12,26,.75); display:grid; place-items:center; }
+  .thumb .play svg{ width:13px; height:13px; fill:#fff; }
+  .meta{ padding:12px 14px 14px; }
+  .meta b{ display:block; font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .meta span{ font:500 11px "Geist Mono", monospace; letter-spacing:.04em; color:var(--muted); }
+  .none{ color:var(--muted); padding:40px 0; }
+  /* the large view */
+  .view{ position:fixed; inset:0; z-index:20; display:none; grid-template-columns:1fr 340px; background:rgba(4,7,16,.94); backdrop-filter:blur(6px); }
+  .view.open{ display:grid; }
+  .view .big{ display:grid; place-items:center; padding:40px; min-width:0; min-height:0; }
+  .view .big img, .view .big video{ max-width:100%; max-height:calc(100vh - 80px); object-fit:contain; border-radius:12px; }
+  .view .big iframe{ width:100%; height:calc(100vh - 80px); border:0; border-radius:12px; background:#fff; }
+  .view aside{ border-left:1px solid var(--line); padding:28px 24px; display:flex; flex-direction:column; gap:14px; background:var(--ink2); }
+  .view aside h2{ margin:0; font-weight:800; font-size:24px; line-height:1.15; letter-spacing:-.015em; word-break:break-word; }
+  .view aside p{ margin:0; color:var(--muted); }
+  .view dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font:500 12px "Geist Mono", monospace; color:var(--muted); }
+  .view dd{ margin:0; color:var(--text); word-break:break-all; }
+  .btn{ display:flex; align-items:center; justify-content:center; gap:8px; font:700 15px Outfit, system-ui; padding:13px; border-radius:999px; border:0; cursor:pointer; }
+  .btn.main{ background:var(--lime); color:var(--ink); }
+  .btn.line{ background:none; color:var(--text); box-shadow:inset 0 0 0 1.5px rgba(223,228,244,.3); }
+  .view .close{ position:absolute; top:18px; right:358px; width:40px; height:40px; border-radius:50%; border:0; background:rgba(223,228,244,.12); color:#fff; font-size:20px; cursor:pointer; }
+  .view .nav{ font:500 12px "Geist Mono", monospace; color:var(--muted); margin-top:auto; }
+  @media (max-width: 900px){ .wrap{ padding:0 18px 60px; } .search{ width:100%; margin-left:0; } .view{ grid-template-columns:1fr; grid-template-rows:1fr auto; } .view aside{ border-left:0; border-top:1px solid var(--line); } .view .close{ right:18px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a class="back" href="./">← Sett Designer</a><a class="back" href="./slide.html">Slides →</a></header>
+  <h1>Assetbibliotheek</h1>
+  <p class="lead">Alle kant-en-klare beelden van Sett. Klik op een beeld om het groot te zien en te downloaden.</p>
+  <div class="bar">
+    <div class="tabs" id="tabs"></div>
+    <input class="search" id="search" type="search" placeholder="Zoeken…">
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+<div class="view" id="view">
+  <div class="big" id="big"></div>
+  <aside>
+    <h2 id="vTitle"></h2>
+    <p id="vText"></p>
+    <dl id="vMeta"></dl>
+    <a class="btn main" id="vDownload" download>Download</a>
+    <button class="btn line" id="vCopy">Kopieer link</button>
+    <div class="nav">← → bladeren · Esc sluiten</div>
+  </aside>
+  <button class="close" id="vClose" aria-label="Sluiten">×</button>
+</div>
+<script type="module">
+import { PHOTOS } from "./v2-content.js"
+
+const KINDS = [
+  { k: "all", label: "Alles" },
+  { k: "render", label: "Scènes" },
+  { k: "card", label: "Kaartbeelden" },
+  { k: "photo", label: "Foto's" },
+  { k: "video", label: "Video's" },
+  { k: "document", label: "Documenten" },
+]
+const KIND_NAME = { render: "Scène-render", card: "Kaartbeeld", photo: "Foto", video: "Video", document: "Document" }
+const pretty = (s) => s.replace(/^(foto|video)-/, "").replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase())
+const kb = (n) => (n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.round(n / 1024) + " KB")
+const $ = (id) => document.getElementById(id)
+
+const all = await (await fetch("/studio/assets.json")).json()
+all.forEach((a) => {
+  a.title = pretty(a.name)
+  a.text = PHOTOS[a.name] || PHOTOS[a.name + "-poster"] || ""
+  a.file = a.path.split("/").pop()
+})
+let kind = new URLSearchParams(location.search).get("kind") || "all"
+let shown = []
+
+function tabs() {
+  $("tabs").innerHTML = ""
+  KINDS.forEach(({ k, label }) => {
+    const n = k === "all" ? all.length : all.filter((a) => a.kind === k).length
+    if (!n) return
+    const b = document.createElement("button")
+    b.className = k === kind ? "on" : ""
+    b.innerHTML = label + "<i>" + n + "</i>"
+    b.addEventListener("click", () => ((kind = k), tabs(), grid()))
+    $("tabs").appendChild(b)
+  })
+}
+function grid() {
+  const q = $("search").value.trim().toLowerCase()
+  shown = all.filter((a) => (kind === "all" || a.kind === kind) && (!q || (a.title + " " + a.text + " " + a.file).toLowerCase().includes(q)))
+  const g = $("grid")
+  g.innerHTML = shown.length ? "" : '<div class="none">Niets gevonden.</div>'
+  shown.forEach((a, i) => {
+    const t = document.createElement("div")
+    t.className = "tile kind-" + a.kind
+    const pic =
+      a.kind === "document" ? '<div class="doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div>'
+      : a.kind === "video" ? '<img loading="lazy" src="' + a.poster + '" alt=""><span class="play"><svg viewBox="0 0 10 10"><path d="M2 1l7 4-7 4z"/></svg></span>'
+      : '<img loading="lazy" src="' + a.path + '" alt="">'
+    const dims = a.w ? a.w + "×" + a.h + " · " : ""
+    t.innerHTML = '<div class="thumb">' + pic + '</div><div class="meta"><b></b><span>' + KIND_NAME[a.kind] + " · " + dims + kb(a.bytes) + "</span></div>"
+    t.querySelector("b").textContent = a.title
+    t.addEventListener("click", () => open(i))
+    g.appendChild(t)
+  })
+}
+let at = -1
+function open(i) {
+  at = (i + shown.length) % shown.length
+  const a = shown[at]
+  const big = $("big")
+  big.innerHTML =
+    a.kind === "video" ? '<video src="' + a.path + '" poster="' + a.poster + '" controls autoplay loop muted playsinline></video>'
+    : a.kind === "document" ? '<iframe src="' + a.path + '"></iframe>'
+    : '<img src="' + a.path + '" alt="">'
+  $("vTitle").textContent = a.title
+  $("vText").textContent = a.text
+  $("vMeta").innerHTML = ""
+  const rows = [["Soort", KIND_NAME[a.kind]], ...(a.w ? [["Formaat", a.w + " × " + a.h + " px"]] : []), ["Grootte", kb(a.bytes)], ["Bestand", a.file]]
+  rows.forEach(([k, v]) => {
+    const dt = document.createElement("dt"), dd = document.createElement("dd")
+    dt.textContent = k
+    dd.textContent = v
+    $("vMeta").append(dt, dd)
+  })
+  $("vDownload").href = a.path
+  $("vDownload").setAttribute("download", a.file)
+  $("view").classList.add("open")
+}
+const close = () => {
+  $("view").classList.remove("open")
+  $("big").innerHTML = ""
+}
+$("vClose").addEventListener("click", close)
+$("view").addEventListener("click", (e) => e.target === $("view") || e.target === $("big") ? close() : null)
+$("vCopy").addEventListener("click", async () => {
+  const a = shown[at]
+  try {
+    await navigator.clipboard.writeText(location.origin + a.path)
+    $("vCopy").textContent = "Link gekopieerd"
+    setTimeout(() => ($("vCopy").textContent = "Kopieer link"), 1500)
+  } catch {}
+})
+addEventListener("keydown", (e) => {
+  if (!$("view").classList.contains("open")) return
+  if (e.key === "Escape") close()
+  if (e.key === "ArrowRight") open(at + 1)
+  if (e.key === "ArrowLeft") open(at - 1)
+})
+$("search").addEventListener("input", grid)
+tabs()
+grid()
+</script>
+</body>
+</html>

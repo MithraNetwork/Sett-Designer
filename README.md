@@ -14,11 +14,20 @@ Open daarna http://localhost:8936/studio/.
 
 ## Wat zit erin
 
+De startpagina (http://localhost:8936/studio/) leidt naar de drie onderdelen:
+
+| Onderdeel | Wat je ermee doet |
+|---|---|
+| [**Slides**](studio/slide.html) | Kies een scène (de slide-scènes, de pagina-hero's of een van de dioramas), kadreer hem (formaat, licht, zoom, draai, hoogte, slepen om te verschuiven), zet zwevende labels met icoon en kleur, en download een PNG op twee keer het formaat. Alles wordt per scène in je browser onthouden. |
+| [**Interactieve Sett-box**](studio/box.html) | De Sett 96 om rond te draaien en open te klappen, met uitleg bij de onderdelen. |
+| [**Assetbibliotheek**](studio/assets.html) | Alle kant-en-klare beelden uit `framer/assets/`: scène-renders, kaartbeelden, foto's, video's en documenten, om te bekijken en te downloaden. Een nieuwe render staat er meteen in. |
+
+Onder **Werkplaats**, voor wie aan de site bouwt:
+
 | Pagina | Wat je ermee doet |
 |---|---|
-| [`studio/slide.html`](studio/slide.html) | **Slides.** Kies een scène (de slide-scènes, de pagina-hero's of een van de dioramas), kadreer hem (formaat, licht, zoom, draai, hoogte, slepen om te verschuiven), zet zwevende labels met icoon en kleur, en download een PNG op twee keer het formaat. Alles wordt per scène in je browser onthouden. |
-| [`studio/index.html`](studio/index.html) | **Renders.** Maakt de PNG-renders en de 3D-bestanden (GLB) van alle scènes uit [`studio/scenes.js`](studio/scenes.js) en [`studio/heroes.js`](studio/heroes.js). |
-| [`studio/v2.html`](studio/v2.html) | **Pagina's.** Voorvertoning van de V2-pagina's van de site, met de inhoud uit [`studio/v2-content.js`](studio/v2-content.js). |
+| [`studio/renders.html`](studio/renders.html) | Maakt de PNG-renders en de 3D-bestanden (GLB) van alle scènes uit [`studio/scenes.js`](studio/scenes.js) en [`studio/heroes.js`](studio/heroes.js). |
+| [`studio/v2.html`](studio/v2.html) | Voorvertoning van de V2-pagina's van de site, met de inhoud uit [`studio/v2-content.js`](studio/v2-content.js). |
 | [`studio/legal.html`](studio/legal.html) | De algemene voorwaarden en de privacyverklaring als A4; `node studio/legal/make-pdf.mjs` maakt er PDF's van. |
 | [`studio/screenshots.html`](studio/screenshots.html) | Screenshots van alle pagina's; `node studio/screenshots/shoot.mjs desktop` en `python3 studio/screenshots/stitch.py` maken ze. |
 

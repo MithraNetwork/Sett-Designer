@@ -1,143 +1,118 @@
 <!doctype html>
 <html lang="nl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Sett render studio</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sett Designer</title>
+<!-- The Sett Designer's start page: the three parts (slides, the interactive Sett box,
+     the asset library), and the workshop tools below them. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600&display=block" rel="stylesheet">
 <style>
-  :root{ --bg:#f3f1ec; --ink:#111212; --dim:#6b6f78; --line:#dcd8cf; }
-  body{ margin:0; font:14px/1.45 "Outfit", system-ui, sans-serif; background:var(--bg); color:var(--ink); }
-  header{ padding:16px 20px; display:flex; gap:12px; align-items:center; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
-  header h1{ font-size:16px; margin:0 12px 0 0; }
-  button{ font:inherit; border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 14px; cursor:pointer; }
-  #status{ color:var(--dim); }
-  main{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; padding:20px; }
-  figure{ margin:0; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
-  figure .img{ aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; background:
-      repeating-conic-gradient(#f4f4f4 0% 25%, #fbfbfb 0% 50%) 50% / 20px 20px; }
-  figure.dark .img{ background:#0d1130; }
-  figure img{ max-width:100%; max-height:100%; display:block; }
-  figcaption{ padding:10px 12px; font-size:12px; color:var(--dim); display:flex; justify-content:space-between; gap:8px; }
-  figcaption b{ color:var(--ink); font-weight:600; }
-  canvas#gl{ position:fixed; left:-99999px; top:0; }
+  :root{ color-scheme:dark; --ink:#060C1A; --ink2:#0B1224; --text:#F4F6FB; --muted:rgba(223,228,244,.68); --line:rgba(223,228,244,.1); --lime:#8DFF66; }
+  *{ box-sizing:border-box; }
+  html, body{ margin:0; background:var(--ink); color:var(--text); font:400 16px/1.55 Outfit, system-ui, sans-serif; }
+  body{ min-height:100vh; background:radial-gradient(70% 55% at 85% -10%, rgba(43,140,255,.16), transparent 60%), radial-gradient(60% 50% at -10% 110%, rgba(141,255,102,.08), transparent 60%), var(--ink); }
+  a{ color:inherit; text-decoration:none; }
+  .wrap{ max-width:1280px; margin:0 auto; padding:0 40px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding:30px 0; }
+  .logo{ display:flex; align-items:flex-end; gap:14px; }
+  .logo svg{ width:118px; height:auto; fill:#fff; display:block; }
+  .logo span{ font:600 12px "Geist Mono", monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--lime); padding-bottom:6px; }
+  header nav a{ font:600 12px "Geist Mono", monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  header nav a:hover{ color:var(--text); }
+  .intro{ padding:56px 0 48px; max-width:760px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:10px; font:600 12px "Geist Mono", monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--lime); margin-bottom:22px; }
+  .eyebrow::before{ content:""; width:7px; height:7px; border-radius:50%; background:var(--lime); }
+  h1{ font-weight:800; font-size:clamp(44px, 6.4vw, 88px); line-height:.95; letter-spacing:-.035em; margin:0; }
+  .intro p{ margin:24px 0 0; font-size:19px; color:var(--muted); max-width:600px; }
+  /* the three parts */
+  .parts{ display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:20px; }
+  .part{ position:relative; display:flex; flex-direction:column; border-radius:28px; overflow:hidden; background:var(--ink2); box-shadow:inset 0 0 0 1px var(--line); transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
+  .part:hover{ transform:translateY(-6px); box-shadow:inset 0 0 0 1px rgba(223,228,244,.22), 0 30px 60px rgba(0,0,0,.4); }
+  .pic{ position:relative; aspect-ratio:16/10; overflow:hidden; background:radial-gradient(80% 80% at 50% 30%, #1b2a55, #0b1224); }
+  .pic img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .6s cubic-bezier(.2,.8,.2,1); }
+  .part:hover .pic img{ transform:scale(1.04); }
+  .pic.contain img{ object-fit:contain; padding:18px; }
+  .pic.mosaic{ display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:#0b1224; }
+  .pic.mosaic img{ border-radius:14px; }
+  .tag{ position:absolute; left:16px; top:16px; font:600 11px "Geist Mono", monospace; letter-spacing:.12em; text-transform:uppercase; padding:7px 11px; border-radius:999px; background:rgba(6,12,26,.72); backdrop-filter:blur(8px); color:var(--text); }
+  .body{ padding:24px 26px 26px; display:flex; flex-direction:column; flex:1; }
+  .body h2{ font-weight:800; font-size:28px; line-height:1.1; letter-spacing:-.02em; margin:0 0 10px; }
+  .body p{ margin:0; color:var(--muted); font-size:16px; flex:1; }
+  .go{ display:inline-flex; align-items:center; gap:10px; margin-top:22px; font-weight:700; color:var(--lime); }
+  .go svg{ width:18px; height:18px; transition:transform .3s; }
+  .part:hover .go svg{ transform:translateX(4px); }
+  /* the workshop */
+  .tools{ margin:72px 0 0; padding:28px 0 64px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; align-items:baseline; gap:12px 28px; }
+  .tools b{ font:600 12px "Geist Mono", monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-right:8px; }
+  .tools a{ color:var(--text); font-weight:500; border-bottom:1px solid rgba(223,228,244,.25); padding-bottom:2px; }
+  .tools a:hover{ border-color:var(--lime); }
+  .tools small{ color:var(--muted); }
+  @media (max-width: 1000px){ .parts{ grid-template-columns:1fr; } .wrap{ padding:0 22px; } }
 </style>
 </head>
 <body>
-<header>
-  <h1>Sett render studio</h1>
-  <button id="all">Render all</button>
-  <button id="heroes">Export page-hero GLBs</button>
-  <button id="box">Export Sett box GLB</button>
-  <button id="scroll">Export scroll-scene GLBs</button>
-  <a href="./heroes.html" style="margin-left:auto">Page heroes →</a>
-  <a href="./box.html">Interactive box →</a>
-  <a href="./screenshots.html">Screenshots →</a>
-  <span id="status">loading model…</span>
-</header>
-<main id="grid"></main>
-<canvas id="gl"></canvas>
+<div class="wrap">
+  <header>
+    <a class="logo" href="./" aria-label="Sett Designer"><svg id="logo" viewBox="0 0 130 66.338" role="img" aria-label="Sett"></svg><span>Designer</span></a>
+    <nav><a href="https://www.sett.nl" target="_blank" rel="noopener">sett.nl ↗</a></nav>
+  </header>
+
+  <section class="intro">
+    <div class="eyebrow">Sett Designer</div>
+    <h1>Beelden van Sett, klaar voor gebruik.</h1>
+    <p>Maak slides met de 3D-scènes van de site, laat Sett van alle kanten zien, of pak een kant-en-klare render, foto of video uit de bibliotheek.</p>
+  </section>
+
+  <section class="parts">
+    <a class="part" href="./slide.html">
+      <div class="pic"><img src="./previews/slides.jpg" alt="Een slide met een kantoor, serverruimte en drie Setts"><span class="tag">3D · PNG</span></div>
+      <div class="body">
+        <h2>Slides</h2>
+        <p>Kies een 3D-scène, kadreer hem, zet er labels bij en download hem als PNG in 4K voor je presentatie.</p>
+        <span class="go">Open de slides <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+    </a>
+    <a class="part" href="./box.html">
+      <div class="pic contain"><img src="/framer/assets/sett-96-exploded.png" alt="Een opengewerkte Sett 96"><span class="tag">Interactief</span></div>
+      <div class="body">
+        <h2>Interactieve Sett-box</h2>
+        <p>Draai de Sett 96 rond, open hem en bekijk wat erin zit: de accu's, de omvormer en de laadpaal.</p>
+        <span class="go">Open de box <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+    </a>
+    <a class="part" href="./assets.html">
+      <div class="pic mosaic">
+        <img src="/framer/assets/card-doelgroep-overheid.png" alt="">
+        <img src="/framer/assets/card-onzichtbare-energiehub.png" alt="">
+        <img src="/framer/assets/card-probleem-avond.png" alt="">
+        <img src="/framer/assets/card-voordeel-delen.png" alt="">
+        <span class="tag">Renders · foto's · video</span>
+      </div>
+      <div class="body">
+        <h2>Assetbibliotheek</h2>
+        <p>Alle kant-en-klare beelden van Sett: de renders, de kaartbeelden, foto's, video's en documenten, om te bekijken en te downloaden.</p>
+        <span class="go">Open de bibliotheek <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+    </a>
+  </section>
+
+  <section class="tools">
+    <b>Werkplaats</b>
+    <a href="./renders.html">Renders maken</a>
+    <a href="./v2.html">Pagina's bekijken</a>
+    <a href="./screenshots.html">Screenshots</a>
+    <a href="./legal.html?doc=voorwaarden">Juridisch (A4)</a>
+    <small>Voor wie aan de site bouwt.</small>
+  </section>
+</div>
 <script type="module">
-import { createStudio, loadModel, save } from "./core.js"
-import { SCENES } from "./scenes.js"
-import { SCROLL, CARD } from "./scroll.js"
-
-const status = document.getElementById("status")
-const grid = document.getElementById("grid")
-const studio = createStudio(document.getElementById("gl"))
-window.__studio = studio
-await loadModel("/")
-status.textContent = "ready — " + SCENES.length + " scenes"
-
-const cards = {}
-SCENES.forEach((s) => {
-  const f = document.createElement("figure")
-  if (s.dark) f.className = "dark"
-  f.innerHTML = '<div class="img"></div><figcaption><b>' + s.name + '</b><span>' + (s.section || "") + '</span></figcaption>'
-  f.addEventListener("click", () => run(s))
-  grid.appendChild(f)
-  cards[s.name] = f
-})
-
-async function run(s) {
-  const t0 = performance.now()
-  studio.clear()
-  studio.light(s.light || "day", s.lightOver || {})
-  s.build(studio)
-  // a scene that also turns on scroll is framed to hold across the whole turn
-  const shot = Object.assign({ width: 2400, height: 1600, ss: 2 }, s.shot || {}, { twist: SCROLL[s.name]?.twist ?? 0 })
-  const { blob, canvas } = await studio.render(shot)
-  const res = await save(s.name + ".png", blob)
-  // its card version: a full-bleed crop for the boxed images, same light and shadows
-  const card = SCROLL[s.name]?.card
-  if (card) {
-    studio.clear()
-    studio.light(s.light || "day", s.lightOver || {})
-    s.build(studio)
-    // framed exactly like the scene's own shot (as its GLB), then the card region at CARD size
-    const c = await studio.render(Object.assign({ width: 2400, height: 1600, ss: 2 }, s.shot || {}, { card, twist: SCROLL[s.name].twist ?? 0, out: CARD }))
-    await save("card-" + s.name + ".png", c.blob)
-  }
-  const img = cards[s.name].querySelector(".img")
-  img.innerHTML = ""
-  const el = new Image()
-  el.src = canvas.toDataURL("image/png")
-  img.appendChild(el)
-  return { name: s.name, ms: Math.round(performance.now() - t0), bytes: res.bytes, w: shot.width, h: shot.height }
-}
-window.__run = async (names) => {
-  const out = []
-  for (const s of SCENES) if (!names || names.includes(s.name)) out.push(await run(s))
-  return out
-}
-document.getElementById("all").addEventListener("click", async () => {
-  status.textContent = "rendering…"
-  const r = await window.__run()
-  status.textContent = "rendered " + r.length
-})
-// the realtime assets: the /particulieren and /bedrijven hero scenes (for SettHero3D)
-// and the unit on its own (for SettBox3D) — written next to the components in framer/
-document.getElementById("heroes").addEventListener("click", async () => {
-  const core = await import("./core.js")
-  const H = await import("./heroes.js")
-  status.textContent = "exporting heroes…"
-  const a = await save("sett-hero-particulieren.glb", await core.exportGroupGLB(H.heroParticulieren()))
-  const b = await save("sett-hero-bedrijven.glb", await core.exportGroupGLB(H.heroBedrijven()))
-  status.textContent = "heroes: " + Math.round(a.bytes / 1024) + " KB + " + Math.round(b.bytes / 1024) + " KB"
-})
-document.getElementById("box").addEventListener("click", async () => {
-  const core = await import("./core.js")
-  const r = await save("sett-box.glb", await core.exportSettGLB())
-  status.textContent = "box: " + Math.round(r.bytes / 1024) + " KB"
-})
-// the scroll-driven scenes (SettScrollScene): the composition, the PNG's exact
-// camera + lights + baked contact shadow, and the scroll effect, per scene
-async function exportScroll(name) {
-  const core = await import("./core.js")
-  const s = SCENES.find((x) => x.name === name)
-  studio.clear()
-  studio.light(s.light || "day", s.lightOver || {})
-  s.build(studio)
-  const cfg = SCROLL[name]
-  const shot = Object.assign({ width: 2400, height: 1600 }, s.shot || {}, { twist: cfg.twist ?? 0 })
-  const { meta, contactMesh } = studio.shot(shot)
-  if (contactMesh) studio.root.add(contactMesh)
-  studio.root.userData.sett = { ...meta, scroll: cfg, name }
-  const blob = await core.exportGroupGLB(studio.root, { keepNormals: true })
-  if (contactMesh) studio.root.remove(contactMesh)
-  delete studio.root.userData.sett
-  return save("sett-scroll-" + name + ".glb", blob)
-}
-window.__exportScroll = async (names = Object.keys(SCROLL)) => {
-  const out = []
-  for (const n of names) out.push([n, Math.round((await exportScroll(n)).bytes / 1024) + " KB"])
-  return out
-}
-document.getElementById("scroll").addEventListener("click", async () => {
-  status.textContent = "exporting scroll scenes…"
-  const r = await window.__exportScroll()
-  status.textContent = "scroll scenes: " + r.length
-})
-window.__ready = true
+// the Sett logo, from the menu component (one path)
+const nav = await (await fetch("/framer/SettNav.tsx")).text()
+const d = (nav.match(/LOGO_D = "([^"]+)"/) || [])[1]
+if (d) document.getElementById("logo").innerHTML = '<path d="' + d + '"/>'
 </script>
 </body>
 </html>

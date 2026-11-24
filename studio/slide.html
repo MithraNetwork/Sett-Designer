@@ -18,7 +18,7 @@
   .app{ display:grid; grid-template-columns:230px 1fr 320px; height:100vh; }
   aside{ background:var(--panel); border-right:1px solid var(--line); overflow:auto; padding:16px 12px 24px; }
   aside.right{ border-right:0; border-left:1px solid var(--line); padding:16px 16px 24px; }
-  .brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; margin:2px 4px 18px; }
+  .brand{ color:inherit; text-decoration:none; display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; margin:2px 4px 18px; }
   .brand i{ width:8px; height:8px; border-radius:50%; background:var(--lime); }
   h3{ margin:18px 4px 8px; font:600 10.5px "Geist Mono", ui-monospace, monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
   h3:first-of-type{ margin-top:0; }
@@ -74,7 +74,7 @@
 <body>
 <div class="app">
   <aside>
-    <div class="brand"><i></i>Sett studio · slides</div>
+    <a class="brand" href="./" title="Terug naar de Sett Designer"><i></i>Sett Designer · slides</a>
     <div class="scenes" id="scenes"></div>
   </aside>
   <main class="center" id="center">

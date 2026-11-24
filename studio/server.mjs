@@ -11,7 +11,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, "..")
 const OUT = path.join(ROOT, "framer", "assets")
 const PORT = Number(process.env.PORT || 8936)
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".json": "application/json", ".png": "image/png", ".obj": "text/plain", ".mtl": "text/plain", ".stl": "application/octet-stream", ".svg": "image/svg+xml", ".css": "text/css", ".glb": "model/gltf-binary", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".mp4": "video/mp4", ".webm": "video/webm" }
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".json": "application/json", ".png": "image/png", ".obj": "text/plain", ".mtl": "text/plain", ".stl": "application/octet-stream", ".svg": "image/svg+xml", ".css": "text/css", ".glb": "model/gltf-binary", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".mp4": "video/mp4", ".webm": "video/webm", ".pdf": "application/pdf", ".webp": "image/webp" }
 
 fs.mkdirSync(OUT, { recursive: true })
 const built = new Map() // component source → { mtime, code }
@@ -33,6 +33,37 @@ http
                 fs.writeFileSync(path.join(dest, name), buf)
                 res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ ok: true, name, bytes: buf.length }))
             })
+            return
+        }
+        // /studio/assets.json: what the asset library shows, read from framer/assets/ on every
+        // request (so a new render is in it at once): renders and cards (PNG, with their pixel
+        // size), photos and videos (with their posters), documents
+        if (url.pathname === "/studio/assets.json") {
+            const A = path.join(ROOT, "framer", "assets")
+            const ls = (d, re) => (fs.existsSync(d) ? fs.readdirSync(d).filter((f) => re.test(f)).sort() : [])
+            const item = (rel) => {
+                const f = path.join(ROOT, rel)
+                const out = { path: "/" + rel.split(path.sep).join("/"), bytes: fs.statSync(f).size }
+                if (rel.endsWith(".png")) {
+                    const b = Buffer.alloc(24)
+                    const fd = fs.openSync(f, "r")
+                    fs.readSync(fd, b, 0, 24, 0)
+                    fs.closeSync(fd)
+                    out.w = b.readUInt32BE(16)
+                    out.h = b.readUInt32BE(20)
+                }
+                return out
+            }
+            const pngs = ls(A, /\.png$/)
+            const photos = ls(path.join(A, "photo"), /\.jpg$/)
+            const list = [
+                ...pngs.filter((f) => !f.startsWith("card-")).map((f) => ({ kind: "render", name: f.replace(/\.png$/, ""), ...item(path.join("framer", "assets", f)) })),
+                ...pngs.filter((f) => f.startsWith("card-")).map((f) => ({ kind: "card", name: f.replace(/^card-|\.png$/g, ""), ...item(path.join("framer", "assets", f)) })),
+                ...photos.filter((f) => !/-poster\.jpg$/.test(f)).map((f) => ({ kind: "photo", name: f.replace(/\.jpg$/, ""), ...item(path.join("framer", "assets", "photo", f)) })),
+                ...ls(path.join(A, "photo"), /\.mp4$/).map((f) => ({ kind: "video", name: f.replace(/\.mp4$/, ""), poster: "/framer/assets/photo/" + f.replace(/\.mp4$/, "-poster.jpg"), ...item(path.join("framer", "assets", "photo", f)) })),
+                ...ls(path.join(A, "legal"), /\.pdf$/).map((f) => ({ kind: "document", name: f.replace(/\.pdf$/, ""), ...item(path.join("framer", "assets", "legal", f)) })),
+            ]
+            res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify(list))
             return
         }
         // /studio/lib/<Component>.js: the Framer component from framer/<Component>.tsx,
