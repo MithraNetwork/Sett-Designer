@@ -44,12 +44,7 @@
   .go{ display:inline-flex; align-items:center; gap:10px; margin-top:22px; font-weight:700; color:var(--lime); }
   .go svg{ width:18px; height:18px; transition:transform .3s; }
   .part:hover .go svg{ transform:translateX(4px); }
-  /* the workshop */
-  .tools{ margin:72px 0 0; padding:28px 0 64px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; align-items:baseline; gap:12px 28px; }
-  .tools b{ font:600 12px "Geist Mono", monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-right:8px; }
-  .tools a{ color:var(--text); font-weight:500; border-bottom:1px solid rgba(223,228,244,.25); padding-bottom:2px; }
-  .tools a:hover{ border-color:var(--lime); }
-  .tools small{ color:var(--muted); }
+  .parts{ margin-bottom:80px; }
   @media (max-width: 1000px){ .parts{ grid-template-columns:1fr; } .wrap{ padding:0 22px; } }
 </style>
 <script type="module" src="./nav.js"></script>
@@ -96,14 +91,6 @@
     </a>
   </section>
 
-  <section class="tools">
-    <b>Werkplaats</b>
-    <a href="./renders.html">Renders maken</a>
-    <a href="./v2.html">Pagina's bekijken</a>
-    <a href="./screenshots.html">Screenshots</a>
-    <a href="./legal.html?doc=voorwaarden">Juridisch (A4)</a>
-    <small>Voor wie aan de site bouwt.</small>
-  </section>
 </div>
 </body>
 </html>

@@ -25,3 +25,17 @@
 
 .DS_Store
 node_modules/
+
+# the workshop: only for building the site, kept on this computer, not online
+/studio/renders.html
+/studio/scenes.js
+/studio/screenshots.html
+/studio/screenshots/
+/studio/legal.html
+/studio/legal/
+/studio/v2.html
+/studio/v2-pages.js
+/studio/heroes.html
+/studio/nav.html
+/studio/pages.html
+/studio/scroll.html
